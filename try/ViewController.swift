@@ -13,12 +13,13 @@ class ViewController: UIViewController {
         let btn = UIButton()
         btn.setTitle("button", for: .normal)
         btn.backgroundColor = .blue
+        btn.frame = CGRect(x: 200, y: 300, width: 100, height: 50)
         return btn
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        button.frame = CGRect(x: 200, y: 300, width: 100, height: 50)
+        view.addSubview(button)
     }
 
 
