@@ -13,6 +13,7 @@ class ViewController: UIViewController {
         let btn = UIButton()
         btn.setTitle("button", for: .normal)
         btn.backgroundColor = .blue
+        btn.layer.cornerRadius = 20
         btn.frame = CGRect(x: 200, y: 300, width: 100, height: 50)
         return btn
     }()
