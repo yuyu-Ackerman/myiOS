@@ -36,41 +36,28 @@
 		7F8222D38D2A001DB6828337 /* Pods-try.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-try.release.xcconfig"; path = "Target Support Files/Pods-try/Pods-try.release.xcconfig"; sourceTree = "<group>"; };
 		8CF99BC444E482FDA88DAAFC /* Pods-try-tryUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-try-tryUITests.release.xcconfig"; path = "Target Support Files/Pods-try-tryUITests/Pods-try-tryUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A9ABE3AD0035C05821F55CC3 /* Pods-tryTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tryTests.release.xcconfig"; path = "Target Support Files/Pods-tryTests/Pods-tryTests.release.xcconfig"; sourceTree = "<group>"; };
-		B8486ECF2EDF4027005C0DB5 /* try.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = try.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B8486EE52EDF4028005C0DB5 /* tryTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tryTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B8486EEF2EDF4028005C0DB5 /* tryUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tryUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8486ECF2EDF4027005C0DB5 /* TodayView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TodayView.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8486EE52EDF4028005C0DB5 /* TodayViewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodayViewTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B8486EEF2EDF4028005C0DB5 /* TodayViewUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodayViewUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB268FC7197382D91FED1706 /* Pods_try.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_try.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7DFC203920D36374B8D1B2A /* Pods_try_tryUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_try_tryUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F267AE8D33B74608529F960E /* Pods-try-tryUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-try-tryUITests.debug.xcconfig"; path = "Target Support Files/Pods-try-tryUITests/Pods-try-tryUITests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B8486EF72EDF4028005C0DB5 /* Exceptions for "try" folder in "try" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = B8486ECE2EDF4027005C0DB5 /* try */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B8486ED12EDF4027005C0DB5 /* try */ = {
+		B8486ED12EDF4027005C0DB5 /* TodayView */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B8486EF72EDF4028005C0DB5 /* Exceptions for "try" folder in "try" target */,
-			);
-			path = try;
+			path = TodayView;
 			sourceTree = "<group>";
 		};
-		B8486EE82EDF4028005C0DB5 /* tryTests */ = {
+		B8486EE82EDF4028005C0DB5 /* TodayViewTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = tryTests;
+			path = TodayViewTests;
 			sourceTree = "<group>";
 		};
-		B8486EF22EDF4028005C0DB5 /* tryUITests */ = {
+		B8486EF22EDF4028005C0DB5 /* TodayViewUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = tryUITests;
+			path = TodayViewUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -129,9 +116,9 @@
 		B8486EC62EDF4027005C0DB5 = {
 			isa = PBXGroup;
 			children = (
-				B8486ED12EDF4027005C0DB5 /* try */,
-				B8486EE82EDF4028005C0DB5 /* tryTests */,
-				B8486EF22EDF4028005C0DB5 /* tryUITests */,
+				B8486ED12EDF4027005C0DB5 /* TodayView */,
+				B8486EE82EDF4028005C0DB5 /* TodayViewTests */,
+				B8486EF22EDF4028005C0DB5 /* TodayViewUITests */,
 				B8486ED02EDF4027005C0DB5 /* Products */,
 				4543923814F1616B02C990B6 /* Pods */,
 				3AA790924E7203AE9AD1DA8B /* Frameworks */,
@@ -141,9 +128,9 @@
 		B8486ED02EDF4027005C0DB5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B8486ECF2EDF4027005C0DB5 /* try.app */,
-				B8486EE52EDF4028005C0DB5 /* tryTests.xctest */,
-				B8486EEF2EDF4028005C0DB5 /* tryUITests.xctest */,
+				B8486ECF2EDF4027005C0DB5 /* TodayView.app */,
+				B8486EE52EDF4028005C0DB5 /* TodayViewTests.xctest */,
+				B8486EEF2EDF4028005C0DB5 /* TodayViewUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,9 +138,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B8486ECE2EDF4027005C0DB5 /* try */ = {
+		B8486ECE2EDF4027005C0DB5 /* TodayView */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B8486EF82EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "try" */;
+			buildConfigurationList = B8486EF82EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayView" */;
 			buildPhases = (
 				2632455913F09F845303A24F /* [CP] Check Pods Manifest.lock */,
 				B8486ECB2EDF4027005C0DB5 /* Sources */,
@@ -166,16 +153,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				B8486ED12EDF4027005C0DB5 /* try */,
+				B8486ED12EDF4027005C0DB5 /* TodayView */,
 			);
-			name = try;
+			name = TodayView;
 			productName = try;
-			productReference = B8486ECF2EDF4027005C0DB5 /* try.app */;
+			productReference = B8486ECF2EDF4027005C0DB5 /* TodayView.app */;
 			productType = "com.apple.product-type.application";
 		};
-		B8486EE42EDF4028005C0DB5 /* tryTests */ = {
+		B8486EE42EDF4028005C0DB5 /* TodayViewTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B8486EFD2EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "tryTests" */;
+			buildConfigurationList = B8486EFD2EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayViewTests" */;
 			buildPhases = (
 				D2C628BE94B4833E049A7516 /* [CP] Check Pods Manifest.lock */,
 				B8486EE12EDF4028005C0DB5 /* Sources */,
@@ -188,16 +175,16 @@
 				B8486EE72EDF4028005C0DB5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B8486EE82EDF4028005C0DB5 /* tryTests */,
+				B8486EE82EDF4028005C0DB5 /* TodayViewTests */,
 			);
-			name = tryTests;
+			name = TodayViewTests;
 			productName = tryTests;
-			productReference = B8486EE52EDF4028005C0DB5 /* tryTests.xctest */;
+			productReference = B8486EE52EDF4028005C0DB5 /* TodayViewTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		B8486EEE2EDF4028005C0DB5 /* tryUITests */ = {
+		B8486EEE2EDF4028005C0DB5 /* TodayViewUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B8486F002EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "tryUITests" */;
+			buildConfigurationList = B8486F002EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayViewUITests" */;
 			buildPhases = (
 				E46C158729F7441CFBB97215 /* [CP] Check Pods Manifest.lock */,
 				B8486EEB2EDF4028005C0DB5 /* Sources */,
@@ -211,11 +198,11 @@
 				B8486EF12EDF4028005C0DB5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				B8486EF22EDF4028005C0DB5 /* tryUITests */,
+				B8486EF22EDF4028005C0DB5 /* TodayViewUITests */,
 			);
-			name = tryUITests;
+			name = TodayViewUITests;
 			productName = tryUITests;
-			productReference = B8486EEF2EDF4028005C0DB5 /* tryUITests.xctest */;
+			productReference = B8486EEF2EDF4028005C0DB5 /* TodayViewUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -241,7 +228,7 @@
 					};
 				};
 			};
-			buildConfigurationList = B8486ECA2EDF4027005C0DB5 /* Build configuration list for PBXProject "try" */;
+			buildConfigurationList = B8486ECA2EDF4027005C0DB5 /* Build configuration list for PBXProject "TodayView" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -255,9 +242,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B8486ECE2EDF4027005C0DB5 /* try */,
-				B8486EE42EDF4028005C0DB5 /* tryTests */,
-				B8486EEE2EDF4028005C0DB5 /* tryUITests */,
+				B8486ECE2EDF4027005C0DB5 /* TodayView */,
+				B8486EE42EDF4028005C0DB5 /* TodayViewTests */,
+				B8486EEE2EDF4028005C0DB5 /* TodayViewUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -424,12 +411,12 @@
 /* Begin PBXTargetDependency section */
 		B8486EE72EDF4028005C0DB5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B8486ECE2EDF4027005C0DB5 /* try */;
+			target = B8486ECE2EDF4027005C0DB5 /* TodayView */;
 			targetProxy = B8486EE62EDF4028005C0DB5 /* PBXContainerItemProxy */;
 		};
 		B8486EF12EDF4028005C0DB5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B8486ECE2EDF4027005C0DB5 /* try */;
+			target = B8486ECE2EDF4027005C0DB5 /* TodayView */;
 			targetProxy = B8486EF02EDF4028005C0DB5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -627,7 +614,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/try.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/try";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodayView.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TodayView";
 			};
 			name = Debug;
 		};
@@ -646,7 +633,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/try.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/try";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TodayView.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TodayView";
 			};
 			name = Release;
 		};
@@ -687,7 +674,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B8486ECA2EDF4027005C0DB5 /* Build configuration list for PBXProject "try" */ = {
+		B8486ECA2EDF4027005C0DB5 /* Build configuration list for PBXProject "TodayView" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B8486EFB2EDF4028005C0DB5 /* Debug */,
@@ -696,7 +683,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B8486EF82EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "try" */ = {
+		B8486EF82EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayView" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B8486EF92EDF4028005C0DB5 /* Debug */,
@@ -705,7 +692,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B8486EFD2EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "tryTests" */ = {
+		B8486EFD2EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayViewTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B8486EFE2EDF4028005C0DB5 /* Debug */,
@@ -714,7 +701,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B8486F002EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "tryUITests" */ = {
+		B8486F002EDF4028005C0DB5 /* Build configuration list for PBXNativeTarget "TodayViewUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B8486F012EDF4028005C0DB5 /* Debug */,

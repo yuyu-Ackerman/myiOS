@@ -9,6 +9,8 @@ import UIKit
 import SnapKit
 
 class ViewController: UIViewController {
+    
+    private var isPlaceholderActive: Bool = true
 
     // MARK: UI 控件
     private let titleLabel: UILabel = {
@@ -39,11 +41,15 @@ class ViewController: UIViewController {
         return lbl
     }()
     
+    //TODO: 搞明白 frame 约束的影响
     private let starRateView: StarRateView = {
-        let view = StarRateView(frame: CGRect(x: 0, y: 0, width: 0, height: 0), totalStarCount: 5, currentStarCount: 0, starSpace: 10)
+        let view = StarRateView(frame: CGRect(x: 0, y: 0, width: 200, height: 32), //
+                                totalStarCount: 5,
+                                currentStarCount: 0,
+                                starSpace: 10)
         view.isPanEnable = true
         view.leastStar = 0
-        view.starType = .default
+        view.starType = .half
         return view
     }()
     
@@ -55,16 +61,24 @@ class ViewController: UIViewController {
         return label
     }()
     
-    private let textEditField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "说点什么吧..."
-        textField.layer.cornerRadius = 12
-        return textField
+    private lazy var textEditView: UITextView = {
+        let attr = NSMutableAttributedString(string: "说点什么吧...")
+        attr.addAttribute(.font, value: UIFont.systemFont(ofSize: 16), range: NSRange(location: 0, length: attr.length))
+        attr.addAttribute(.foregroundColor, value: UIColor.gray, range: NSRange(location: 0, length: attr.length))
+        let textView = UITextView()
+
+        textView.layer.cornerRadius = 12
+        textView.layer.borderWidth = 1
+        textView.layer.borderColor = UIColor.lightGray.cgColor
+        textView.textContainerInset = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11)
+        textView.delegate = self
+        textView.attributedText = attr
+        return textView
     }()
     
     private let addPictureLabel: UILabel = {
         let label = UILabel()
-        label.text = "来几张图片"
+        label.text = "晒晒照片"
         label.textColor = .black
         label.font = .systemFont(ofSize: 18)
         return label
@@ -89,6 +103,9 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         addView()
         setConstraints()
+        starRateView.show(type: .default, isPanEnable: true, leastStar: 0) { score in
+            print(score)
+        }
     }
     
     
@@ -102,7 +119,7 @@ class ViewController: UIViewController {
         contentScrollView.addSubview(starRateLabel)
         contentScrollView.addSubview(starRateView)
         contentScrollView.addSubview(textTitleLabel)
-        contentScrollView.addSubview(textEditField)
+        contentScrollView.addSubview(textEditView)
         contentScrollView.addSubview(addPictureLabel)
         contentScrollView.addSubview(pictureContainerView)
     }
@@ -124,7 +141,7 @@ class ViewController: UIViewController {
         bottomButton.snp.makeConstraints { make in
             make.bottom.equalToSuperview().offset(-20)
             make.height.equalTo(50)
-            make.left.right.equalToSuperview().inset(80)
+            make.left.right.equalToSuperview().inset(90)
         }
         
         contentScrollView.snp.makeConstraints { make in
@@ -149,7 +166,7 @@ class ViewController: UIViewController {
             make.top.equalTo(starRateView.snp.bottom).offset(20)
         }
         
-        textEditField.snp.makeConstraints { make in
+        textEditView.snp.makeConstraints { make in
             make.left.equalToSuperview()
             make.top.equalTo(textTitleLabel.snp.bottom).offset(12)
             make.width.equalToSuperview()
@@ -158,12 +175,23 @@ class ViewController: UIViewController {
         
         addPictureLabel.snp.makeConstraints { make in
             make.left.equalToSuperview()
-            make.top.equalTo(textEditField.snp.bottom).offset(20)
+            make.top.equalTo(textEditView.snp.bottom).offset(20)
         }
         
         pictureContainerView.snp.makeConstraints { make in
             make.width.equalToSuperview()
+            make.top.equalTo(addPictureLabel.snp.bottom).offset(12)
             make.height.equalTo(200)
+        }
+    }
+}
+
+extension ViewController: UITextViewDelegate {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if isPlaceholderActive {
+            textView.text = ""
+            textView.textColor = .black
+            isPlaceholderActive = false
         }
     }
 }
