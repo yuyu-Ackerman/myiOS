@@ -42,15 +42,13 @@ class ViewController: UIViewController {
     }()
     
     //TODO: 搞明白 frame 约束的影响
-    private let starRateView: StarRateView = {
-        let view = StarRateView(frame: CGRect(x: 0, y: 0, width: 200, height: 32), //
-                                totalStarCount: 5,
-                                currentStarCount: 0,
-                                starSpace: 10)
-        view.isPanEnable = true
-        view.leastStar = 0
-        view.starType = .half
-        return view
+    private lazy var starRateView: StarRateView = {
+        let srv = StarRateView(config: StarRateConfigration())
+        // 接收评分回调并打印
+        srv.starScoreClousure = {[weak self] score in  // [weak self] 避免强引用
+            print("当前评分：\(score)")
+        }
+        return srv
     }()
     
     private let textTitleLabel: UILabel = {
@@ -84,8 +82,8 @@ class ViewController: UIViewController {
         return label
     }()
     
-    private let pictureContainerView: UIView = {
-        let view = UIView()
+    private let pictureContainerView: ImageDragGridView = {
+        let view = ImageDragGridView()
         return view
     }()
     
@@ -103,11 +101,8 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         addView()
         setConstraints()
-        starRateView.show(type: .default, isPanEnable: true, leastStar: 0) { score in
-            print(score)
-        }
-    }
     
+    }
     
     //MARK: Private Methods
     private func addView() {
@@ -157,7 +152,7 @@ class ViewController: UIViewController {
         starRateView.snp.makeConstraints { make in
             make.left.equalToSuperview()
             make.top.equalTo(starRateLabel.snp.bottom).offset(12)
-            make.width.equalToSuperview()
+            make.width.equalTo(200)
             make.height.equalTo(32)
         }
         
