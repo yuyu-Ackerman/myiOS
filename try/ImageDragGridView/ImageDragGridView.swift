@@ -37,6 +37,8 @@ public class ImageDragGridView: UIView {
   /// 数据源对象（可选）
   public weak var dataSource: ImageDragGridViewDataSource?
   
+    // TODO: 关于父 ScrollView 引用
+    // TODO: 什么情况下使用 didSet
   /// 父 ScrollView（用于处理手势冲突）
   public weak var parentScrollView: UIScrollView? {
     didSet {
@@ -74,9 +76,11 @@ public class ImageDragGridView: UIView {
     return view
   }()
   
+    // TODO: button 的不同 type 有什么区别
   /// 添加按钮
   private lazy var addButton: UIButton = {
     let button = UIButton(type: .custom)
+      // TODO: 这是什么新的属性
     let iconConfig = UIImage.SymbolConfiguration(
       pointSize: configuration.addButtonIconSize,
       weight: .medium
@@ -105,6 +109,7 @@ public class ImageDragGridView: UIView {
   /// 性能监控
   private let performanceMonitor = PerformanceMonitor.shared
   
+    // TODO: 了解一下 Constraint
   /// 当前高度约束
   private var heightConstraint: Constraint?
   
@@ -126,6 +131,7 @@ public class ImageDragGridView: UIView {
   /**
    * Interface Builder 初始化
    */
+    // TODO: 这个加了一样的内容
   public required init?(coder: NSCoder) {
     self.configuration = .default
     super.init(coder: coder)
@@ -136,6 +142,7 @@ public class ImageDragGridView: UIView {
   /**
    * 便利初始化方法
    */
+    // TODO: 便利初始化是做什么的、为什么要用、什么时候用
   public convenience init(frame: CGRect, configuration: ImageDragGridConfiguration) {
     self.init(configuration: configuration)
     self.frame = frame
@@ -143,6 +150,7 @@ public class ImageDragGridView: UIView {
   
   // MARK: - Layout
   
+    // TODO: 为什么这里要重写 layoutSubviews，一般在什么情况下需要重写
   public override func layoutSubviews() {
     super.layoutSubviews()
     updateLayout()
@@ -159,6 +167,7 @@ public class ImageDragGridView: UIView {
    */
   public func addImages(_ images: [UIImage], animated: Bool = true) {
     let availableSlots = configuration.maxImageCount - self.images.count
+      // TODO: prefix 方法是做什么的
     let imagesToAdd = Array(images.prefix(availableSlots))
     
     guard !imagesToAdd.isEmpty else {
@@ -166,6 +175,7 @@ public class ImageDragGridView: UIView {
       return
     }
     
+      // TODO: addedIndices 有什么作用
     var addedIndices: [Int] = []
     for image in imagesToAdd {
       let index = self.images.count
@@ -270,8 +280,13 @@ public class ImageDragGridView: UIView {
   }
   
   /**
-   * 显示图片选择器
+   * 先检查：已选图片是否到上限？→ 到了就通知代理，不唤起相册；
+     再检查：能不能找到展示相册的控制器？→ 找不到就打印警告，不唤起；
+     再询问代理：是否允许唤起相册？→ 代理拒绝就返回；
+     配置相册：最多选「剩余可选数」张图片，只显示图片；
+     唤起相册：带动画展示相册选择器，展示完成后通知代理。
    */
+    /// 显示图片选择器
   public func presentImagePicker() {
     guard !isMaxImageCountReached else {
       delegate?.imageDragGridView?(self, didReachMaxImageCount: configuration.maxImageCount)
@@ -282,8 +297,9 @@ public class ImageDragGridView: UIView {
       print("Warning: Cannot find view controller to present picker")
       return
     }
-    
+    // 剩余可以添加的照片数量
     let remainingCount = configuration.maxImageCount - images.count
+      // 询问代理
     let shouldPresent = delegate?.imageDragGridView?(
       self, 
       shouldPresentPickerWithRemainingCount: remainingCount
@@ -299,6 +315,7 @@ public class ImageDragGridView: UIView {
     
     viewController.present(picker, animated: true) { [weak self] in
       guard let self = self else { return }
+        // 通知代理已经弹起了 picker
       self.delegate?.imageDragGridViewDidPresentPicker?(self)
     }
   }
@@ -377,6 +394,7 @@ public class ImageDragGridView: UIView {
                      usingSpringWithDamping: configuration.springDamping,
                      initialSpringVelocity: 0.5,
                      options: .curveEaseOut) {
+          // TODO: 这一句存在的意义？什么情况下能用这个
         self.superview?.layoutIfNeeded()
       }
     }
@@ -384,6 +402,7 @@ public class ImageDragGridView: UIView {
   
   private func setupUI() {
     // 添加容器视图
+      // TODO: containerView存在的意义是什么，直接拿最外层 view 当容器不行吗
     addSubview(containerView)
     
     containerView.snp.makeConstraints { make in
@@ -586,6 +605,8 @@ public class ImageDragGridView: UIView {
     }
   }
   
+    // TODO: 了解一下 UIResponder
+    /// 找到最近的 VC（供相册选择用）
   private func findViewController() -> UIViewController? {
     var responder: UIResponder? = self
     while let nextResponder = responder?.next {

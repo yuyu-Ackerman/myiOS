@@ -17,12 +17,14 @@ class ImageGridManager {
     
     // MARK: - Properties
     
+    // TODO: 意欲何为
     /// 容器视图引用
     private weak var containerView: UIView?
     
     /// 布局缓存
     private var layoutCache: LayoutCache?
     
+    // TODO: ？？
     /// 布局缓存时间戳
     private var cacheTimestamp: Date = Date()
     
@@ -132,6 +134,7 @@ class ImageGridManager {
      * @param count 图片数量
      * @return 所有图片的位置数组
      */
+    // TODO: 了解下这个，这里为什么要这么做
     func getCachedPositions(for count: Int) -> [CGPoint] {
         guard let containerView = containerView else { return [] }
         
@@ -165,7 +168,7 @@ class ImageGridManager {
      */
     func updatePositions(
         for imageViews: [UIImageView],
-        excluding excludedView: UIImageView? = nil,
+        excluding excludedView: UIImageView? = nil, // 正在拖拽的 imageView
         animated: Bool = true,
         completion: (() -> Void)? = nil
     ) {

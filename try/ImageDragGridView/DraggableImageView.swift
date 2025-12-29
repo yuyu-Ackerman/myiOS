@@ -17,10 +17,13 @@ import SnapKit
 class DraggableImageView: UIImageView {
     
     // MARK: - Properties
-    
+    //TODO: 为什么要加 weak，
     /// 拖拽手势处理器引用
     weak var dragGestureHandler: DragGestureHandler?
     
+    //TODO: 这一句什么意思
+    // private(set)：对外只读、对内可写，保证状态只能由内部逻辑修改，避免外部篡改
+    // 一旦开关状态变了，就自动触发 “外观更新”
     /// 拖拽状态
     private(set) var dragState: DragState = .idle {
         didSet {
@@ -70,8 +73,11 @@ class DraggableImageView: UIImageView {
     
     /// 拖拽状态枚举
     enum DragState {
+        /// 空闲状态
         case idle
+        /// 拖拽中状态
         case dragging
+        /// 选中状态
         case highlighted
         
         var isInteractive: Bool {
@@ -84,6 +90,8 @@ class DraggableImageView: UIImageView {
         }
     }
     
+    //TODO: 前2个 image 分别是什么作用
+    // 在创建视图和添加图片时都调用 setupImageView（）？
     // MARK: - Initialization
     
     override init(frame: CGRect) {
@@ -104,14 +112,18 @@ class DraggableImageView: UIImageView {
     // MARK: - Setup
     
     private func setupImageView() {
+        // 设置外观、基本属性
         setupBasicProperties()
+        // 添加删除按钮到视图、约束
         setupDeleteButton()
+        // 设置点击手势
         setupGestures()
+        // 无障碍辅助功能
         setupAccessibility()
     }
     
     private func setupBasicProperties() {
-        contentMode = .scaleAspectFill
+        contentMode = .scaleAspectFill // TODO: 不同的模式有什么区别
         clipsToBounds = true
         layer.cornerRadius = ImageDragGridConstants.ImageGrid.imageCornerRadius
         isUserInteractionEnabled = true
@@ -121,6 +133,7 @@ class DraggableImageView: UIImageView {
         layer.borderColor = UIColor.clear.cgColor
     }
     
+    /// 添加删除按钮到视图、约束
     private func setupDeleteButton() {
         // 添加到视图
         addSubview(deleteButton)
@@ -134,7 +147,7 @@ class DraggableImageView: UIImageView {
         // 确保删除按钮在最上层
         bringSubviewToFront(deleteButton)
         
-        // 设置初始可见性
+        // 设置初始可见性：有一个从小变大的动画效果
         updateDeleteButtonVisibility()
     }
     
@@ -144,6 +157,8 @@ class DraggableImageView: UIImageView {
         addGestureRecognizer(tapGesture)
     }
     
+    // TODO: 这个函数是干什么的
+    /// 无障碍辅助功能
     private func setupAccessibility() {
         isAccessibilityElement = true
         accessibilityTraits = [.image, .button]
@@ -151,13 +166,13 @@ class DraggableImageView: UIImageView {
     }
     
     private func updateAccessibilityHint() {
-        if isDragEnabled && isDeleteEnabled && showsDeleteButton {
+        if isDragEnabled && isDeleteEnabled && showsDeleteButton { // 如果：可以拖拽、可以删、有删除按钮
             accessibilityHint = "双击删除图片，长按拖拽排序"
-        } else if isDeleteEnabled && showsDeleteButton {
+        } else if isDeleteEnabled && showsDeleteButton {// 如果：可以删、有删除按钮
             accessibilityHint = "双击删除图片"
-        } else if isDragEnabled {
+        } else if isDragEnabled { // 如果：可以拖拽
             accessibilityHint = "长按拖拽排序"
-        } else {
+        } else { // 什么都没有
             accessibilityHint = "图片"
         }
     }
@@ -224,7 +239,7 @@ class DraggableImageView: UIImageView {
             completion: { _ in
                 self.setDragState(.idle)
                 self.removeDragShadow()
-                completion?()
+                completion?() // 执行外部传入的回调闭包
             }
         )
     }
@@ -273,7 +288,7 @@ class DraggableImageView: UIImageView {
     }
     
     // MARK: - Button Actions
-    
+    /// 删除按钮点击事件
     @objc private func deleteButtonTapped() {
         guard dragState.isInteractive,
               dragGestureHandler?.isDragging() != true,
@@ -290,8 +305,9 @@ class DraggableImageView: UIImageView {
     }
     
     // MARK: - Gesture Handling
-    
+    /// 视图的点击事件：有点击回调执行点击回调，没有的话就删除这个 imageView
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        // 前提是要把交互权限打开
         guard dragState.isInteractive,
               dragGestureHandler?.isDragging() != true else {
             return
@@ -299,6 +315,7 @@ class DraggableImageView: UIImageView {
         
         // 优先执行点击回调
         if let onTap = onTap {
+            // TODO: 知识盲区：触觉反馈
             // 触觉反馈
             let impactFeedback = UIImpactFeedbackGenerator(style: .light)
             impactFeedback.impactOccurred()
@@ -313,7 +330,7 @@ class DraggableImageView: UIImageView {
     }
     
     // MARK: - Visual Effects
-    
+    /// 不同手势状态的视觉效果
     private func updateAppearanceForState() {
         switch dragState {
         case .idle:
@@ -331,28 +348,31 @@ class DraggableImageView: UIImageView {
     }
     
     private func updateInteractionState() {
-        isUserInteractionEnabled = isDragEnabled || (isDeleteEnabled && showsDeleteButton)
+        isUserInteractionEnabled = isDragEnabled || (isDeleteEnabled && showsDeleteButton) // 可以拖 或者 可以删
         alpha = isDragEnabled ? 1.0 : 0.6
         
         // 更新辅助功能提示
         updateAccessibilityHint()
     }
     
+    /// 设置删除按钮初始可见性
     private func updateDeleteButtonVisibility() {
-        let shouldShow = showsDeleteButton && isDeleteEnabled
+        let shouldShow = showsDeleteButton && isDeleteEnabled // 可以显示 + 可以点击删除
         
-        if deleteButton.isHidden && shouldShow {
+        // TODO: 为什么要绕一次从 isHidden 等于否到 true
+        // 从小到大的效果
+        if deleteButton.isHidden && shouldShow { // 如果 shouldShow，则显示
             // 显示删除按钮的动画
             deleteButton.isHidden = false
             deleteButton.alpha = 0
-            deleteButton.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+            deleteButton.transform = CGAffineTransform(scaleX: 0.5, y: 0.5) // 仿射：将删除按钮在 X 轴（水平）和 Y 轴（垂直）方向上缩放到原来的 50% 大小
             
             UIView.animate(withDuration: ImageDragGridConstants.Animation.quickDuration,
                            delay: 0,
                            usingSpringWithDamping: 0.6,
                            initialSpringVelocity: 0.5) { [self] in
                 deleteButton.alpha = 1
-                deleteButton.transform = .identity
+                deleteButton.transform = .identity //.identity 表示「无变换」，即原始状态
             }
         } else if !deleteButton.isHidden && !shouldShow {
             // 隐藏删除按钮的动画
@@ -366,6 +386,7 @@ class DraggableImageView: UIImageView {
         }
     }
     
+    /// 设置阴影效果
     private func applyDragShadow() {
         layer.shadowColor = ImageDragGridConstants.Colors.shadowColor
         layer.shadowOffset = ImageDragGridConstants.DragGesture.shadowOffset
@@ -374,6 +395,7 @@ class DraggableImageView: UIImageView {
         layer.masksToBounds = false
     }
     
+    /// 移除阴影效果
     private func removeDragShadow() {
         layer.shadowOpacity = 0
         layer.masksToBounds = true

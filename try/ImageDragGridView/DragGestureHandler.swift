@@ -25,6 +25,7 @@ protocol DragGestureHandlerDelegate: AnyObject {
  * 专门负责处理图片拖拽的所有逻辑，包括手势识别、视觉反馈和位置计算
  * 提供清晰的回调接口和状态管理
  */
+// TODO: NSObject
 class DragGestureHandler: NSObject {
     
     // MARK: - Properties
@@ -35,6 +36,7 @@ class DragGestureHandler: NSObject {
     /// 网格管理器引用
     private let gridManager: ImageGridManager
     
+    // TODO: weak 引用
     /// 容器视图引用
     private weak var containerView: UIView?
     
@@ -217,6 +219,7 @@ class DragGestureHandler: NSObject {
                 // 通知代理进行位置交换
                 delegate?.dragDidMove(from: imageView.tag, to: targetIndex)
                 
+                // TODO: 为什么要更新
                 // 更新拖拽状态中的当前索引
                 if case .dragging(let draggedView, let origIndex, let origPosition) = dragState {
                     dragState = .dragging(
@@ -272,6 +275,8 @@ class DragGestureHandler: NSObject {
     private func applyDragVisualEffects(to imageView: UIImageView) {
         // 保持裁剪以防止图片内容溢出
         // 重要：始终保持 clipsToBounds = true
+        
+        // TODO: masksToBounds 和 clipsToBounds
         imageView.clipsToBounds = true
         imageView.layer.masksToBounds = true
         
