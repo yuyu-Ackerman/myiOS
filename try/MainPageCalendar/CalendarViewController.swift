@@ -43,8 +43,9 @@ class CalendarViewController: UIViewController {
     // MARK: UI 控件
     private let monthLabel: UILabel = {
         let mlbl = UILabel()
-        mlbl.textColor = .lightText
-        mlbl.text = "12"
+        mlbl.textColor = .white
+        mlbl.font = .systemFont(ofSize: 30, weight: .bold)
+        mlbl.text = ""
         return mlbl
     }()
     
@@ -141,9 +142,9 @@ class CalendarViewController: UIViewController {
         }
         
         CalendarCollectionView.snp.makeConstraints { make in
-            make.top.equalTo(weekTitleStackView.snp.bottom).offset(16)
+            make.top.equalTo(weekTitleStackView.snp.bottom).offset(3)
             make.left.right.equalToSuperview().inset(Constant.edge)
-            make.height.equalTo(Constant.scrollViewHeight)
+            make.height.equalTo(sigalItemW * 5)
         }
     }
     
@@ -151,9 +152,9 @@ class CalendarViewController: UIViewController {
         for title in weekTitle {
             let label = UILabel()
             label.text = title
-            label.textColor = .black // 修正颜色，white 在白底上看不见
+            label.textColor = .white // 修正颜色，white 在白底上看不见
             label.textAlignment = .center
-            label.font = .systemFont(ofSize: 14)
+            label.font = .systemFont(ofSize: 16, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
         }
     }
@@ -227,6 +228,8 @@ extension CalendarViewController: UICollectionViewDataSource {
         } else {
             cell.isHidden = true
         }
+        
+        monthLabel.text = "\(calendar.component(.month, from: now))月"
         
         return cell
     }
