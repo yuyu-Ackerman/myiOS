@@ -18,7 +18,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         let window = UIWindow(windowScene: windowScene)
-        let rootVC = CalenderViewController()   // 你的日历首页
+        let rootVC = CalendarViewController()   // 你的日历首页
         window.rootViewController = rootVC
         self.window = window
         window.makeKeyAndVisible()

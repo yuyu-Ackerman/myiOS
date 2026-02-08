@@ -10,7 +10,7 @@ import SnapKit
 /// 日历视图的 cell
 class CalendarControllerViewCell: UICollectionViewCell {
     
-    static let reuseIdentifier = "calenderCell"
+    static let reuseIdentifier = "calendarCell" // 修正拼写
     
     // MARK: UI 控件
     let backgroundImageView: UIImageView = {
@@ -21,7 +21,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return bgImageView
     }()
     
-    let maskImageView: UIView = { // 有个东西叫 maskView
+    let maskImageView: UIView = { // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
     let mv = UIView()
         mv.backgroundColor = .black
         mv.alpha = 0.5
@@ -37,7 +37,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
     
     // MARK: 初始化方法
     override init(frame: CGRect) {
-        super.init(frame: frame) // 初始化参数?
+        super.init(frame: frame) 
         setupUI()
     }
     
@@ -46,6 +46,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
     }
     
     // TODO: 1. 要加 contentView. 2. 圆角和裁剪要在 contentView 上进行
+    // 回答: 是的，最佳实践是将子视图添加到 contentView 上。
     private func setupUI() {
         contentView.layer.cornerRadius = 10
         contentView.clipsToBounds = true
@@ -66,5 +67,9 @@ class CalendarControllerViewCell: UICollectionViewCell {
             make.center.equalToSuperview()
         }
         
+    }
+    
+    func configDate(with dateNum: Int) {
+        dateLabel.text = String(dateNum)
     }
 }
