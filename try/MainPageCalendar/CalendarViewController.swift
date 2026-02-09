@@ -6,12 +6,14 @@
 //
 
 
-// TODO: 1. 我不知道怎么写星期排头：一个大的 UIView + 7个label，配合 .dividedBy 方法
+// TODO: 1.scrollView contentSize 可以根据约束自动撑开吗？必须要设置吗？所有视图都坍缩了，我怀疑之前 collectionView 的问题也是因为 scrollView。回头研究一下他的 contentSize
+
 
 import UIKit
 import SnapKit
 import Foundation
 
+// TODO: 常量数据 constant
 struct Constant {
     /// 高度
     static let monthLabelHeight = 25
@@ -21,9 +23,13 @@ struct Constant {
     static let componentSpacing = 0
     /// 集合视图单元格宽度
     static let collectionViewCellWidth = 30
-    static let scrollViewHeight = 300
+    /// 日历 cell 间的间隔（暂未使用）
+    static let spaceInCells = 1
+    /// 组件视图左右留白宽度
     static let edge = 16.0
+    /// 星期排头高度
     static let weekTitleViewHeight = 40
+    /// cell 格子数
     static let datenum = 35
 }
 
@@ -31,29 +37,57 @@ struct Constant {
 class CalendarViewController: UIViewController {
     
     private let weekTitle = ["一", "二", "三", "四", "五", "六", "日"]
+    /// 一个日期 cell 的宽高
     private let sigalItemW = (UIScreen.main.bounds.width - Constant.edge * 2)/7
     
-    let now = Date()
-    // 知识点:
-    // Calendar.current: 返回用户当前系统设置的日历（如果用户修改了系统日历设置，这里会变）。
-    // Calendar(identifier: .gregorian): 强制使用公历，不受用户系统设置影响。通常在处理固定业务逻辑时更安全。
-    var calendar = Calendar.current
+//    Swift不允许在类的顶层直接执行赋值、方法调用等操作，只能放声明（属性、方法、协议、嵌套类型等）
+//    let now = Date()
+//    // TODO: K
+//    // 知识点:
+//    // Calendar.current: 返回用户当前系统设置的日历（如果用户修改了系统日历设置，这里会变）。
+//    // Calendar(identifier: .gregorian): 强制使用公历，不受用户系统设置影响。通常在处理固定业务逻辑时更安全。
+//    var calendar = Calendar.current
+//    calendar.timeZone = TimeZone.current
     
+    var now = Date()
+    
+    let calendar: Calendar = {
+        var cal = Calendar.current
+        cal.timeZone = TimeZone.current
+        cal.firstWeekday = 2
+        return cal
+    }()
     
     // MARK: UI 控件
+    /// 整个屏幕内的 scrollView 便于滑动展示信息
+    private lazy var scrollView: UIScrollView = {
+        let slv = UIScrollView()
+        slv.delegate = self
+        slv.showsVerticalScrollIndicator = false
+//        slv.contentSize.width = UIScreen.main.bounds.width
+        // contentInsetAdjustmentBehavior = .never // 如果需要可以关闭自动调整
+        return slv
+    }()
+    
+    /// 内容容器视图，用于辅助 ScrollView 布局
+    private let contentView = UIView()
+    
+    /// 月表示标签
     private let monthLabel: UILabel = {
         let mlbl = UILabel()
         mlbl.textColor = .white
         mlbl.font = .systemFont(ofSize: 30, weight: .bold)
-        mlbl.text = ""
         return mlbl
     }()
     
+    /// 左箭头
     private lazy var leftArrowImageView: UIImageView = {
         let liv = UIImageView()
         liv.image = UIImage(named: "")
+        liv.backgroundColor = .yellow
         liv.contentMode = .scaleAspectFit
         liv.isUserInteractionEnabled = true
+        // TODO: K
         // 提示：#selector 需要对应的函数有 @objc 标记。这里不需要加括号，因为是作为 selector 传递。
         // 如果要传参，selector 名字里会带冒号，如 #selector(tapped(_:))
         let tap = UITapGestureRecognizer(target: self, action: #selector(leftArrowTapped))
@@ -61,8 +95,10 @@ class CalendarViewController: UIViewController {
         return liv
     }()
     
+    /// 右箭头
     private lazy var rightArrowImageView: UIImageView = {
         let riv = UIImageView()
+        riv.backgroundColor = .yellow
         riv.image = UIImage(named: "")
         riv.contentMode = .scaleAspectFit
         riv.isUserInteractionEnabled = true
@@ -72,6 +108,7 @@ class CalendarViewController: UIViewController {
     }()
     
     // 建议使用 UIStackView 来布局星期排头，比手动计算 frame 或约束更简单且自适应
+    /// 星期排头
     private lazy var weekTitleStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
@@ -81,17 +118,19 @@ class CalendarViewController: UIViewController {
     }()
     
     // 移除 CalendarScrollView，因为 UICollectionView 本身就是 ScrollView，嵌套使用会导致布局困难且无必要
+    /// 日历视图
     private lazy var CalendarCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.itemSize = CGSize(width: sigalItemW, height: sigalItemW)
         layout.minimumLineSpacing = CGFloat(Constant.componentSpacing)
         layout.minimumInteritemSpacing = CGFloat(Constant.componentSpacing)
+//        layout.sectionInset = UIEdgeInsets(top: 1, left: 1, bottom: 0, right: 0)
         
         // frame: .zero 表示初始化时大小为 0，因为后续会通过 SnapKit (makeConstraints) 来设置布局，所以初始 frame 不重要
         let ccv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         ccv.delegate = self
         ccv.dataSource = self
-        ccv.backgroundColor = .white
+        ccv.backgroundColor = .yellow
         ccv.showsHorizontalScrollIndicator = false
         ccv.register(CalendarControllerViewCell.self, forCellWithReuseIdentifier: CalendarControllerViewCell.reuseIdentifier)
         return ccv
@@ -102,19 +141,36 @@ class CalendarViewController: UIViewController {
         addView()
         makeConstraints()
         setWeekTitle()
+        updateCalendarUI()
         test()
     }
     
+    /// 更新日历 UI：标题和列表
+    private func updateCalendarUI() {
+        // 1. 更新月份标题
+        let year = calendar.component(.year, from: now)
+        let month = calendar.component(.month, from: now)
+        monthLabel.text = "\(year)年\(month)月"
+        
+        // 2. 刷新 CollectionView
+        CalendarCollectionView.reloadData()
+    }
+    
+    
+    // MARK: private methods
     private func addView() {
+        view.addSubview(scrollView)
         view.addSubview(monthLabel)
         view.addSubview(leftArrowImageView)
         view.addSubview(rightArrowImageView)
-        view.addSubview(weekTitleStackView) // 使用 StackView
+        scrollView.addSubview(weekTitleStackView) // 使用 StackView
         // 直接添加 collectionView
-        view.addSubview(CalendarCollectionView)
+        scrollView.addSubview(CalendarCollectionView)
     }
     
     private func makeConstraints() {
+        
+        
         monthLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().inset(50)
             make.left.equalToSuperview().inset(Constant.edge)
@@ -123,7 +179,7 @@ class CalendarViewController: UIViewController {
         rightArrowImageView.snp.makeConstraints { make in
             make.top.equalTo(monthLabel)
             make.right.equalToSuperview().inset(Constant.edge)
-            make.size.equalTo(CGSize(width: 6, height: 10))
+            make.size.equalTo(CGSize(width: 10, height: 20))
         }
         
         leftArrowImageView.snp.makeConstraints { make in
@@ -131,44 +187,52 @@ class CalendarViewController: UIViewController {
             // inset 正值表示向内缩进。对于 right 约束，正值是向左，负值是向右。
             // 这里想让 leftArrow 在 rightArrow 的左边，应该用 make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
             // 或者 make.trailing.equalTo(rightArrowImageView.snp.leading).offset(-5)
-            make.right.equalTo(rightArrowImageView.snp.left).offset(-15) 
-            make.size.equalTo(CGSize(width: 6, height: 10))
+            make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
+            make.size.equalTo(CGSize(width: 10, height: 20))
+        }
+        
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(monthLabel.snp.bottom).offset(-5)
+            make.left.right.equalToSuperview().inset(Constant.edge)
         }
         
         weekTitleStackView.snp.makeConstraints { make in
             make.top.equalTo(monthLabel.snp.bottom).offset(5)
-            make.left.right.equalToSuperview().inset(Constant.edge) // 两边对齐
+            make.left.right.equalTo(view).inset(Constant.edge)
             make.height.equalTo(Constant.weekTitleViewHeight)
         }
         
         CalendarCollectionView.snp.makeConstraints { make in
             make.top.equalTo(weekTitleStackView.snp.bottom).offset(3)
-            make.left.right.equalToSuperview().inset(Constant.edge)
+            make.left.right.equalTo(view).inset(Constant.edge)
             make.height.equalTo(sigalItemW * 5)
         }
     }
     
+    /// 设置星期排头的文字
     private func setWeekTitle() {
         for title in weekTitle {
             let label = UILabel()
             label.text = title
-            label.textColor = .white // 修正颜色，white 在白底上看不见
+            label.textColor = .white
             label.textAlignment = .center
             label.font = .systemFont(ofSize: 16, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
         }
     }
     
-    private func getFirstWeekDayOfMonth() -> Int {
-        calendar.timeZone = TimeZone.current
-        calendar.firstWeekday = 2
+    /// 获取当月第一天的星期信息
+    private func getFirstWeekDayOfMonth(from date: Date) -> Int {
         
-        let firstDayComponents = calendar.dateComponents([.year, .month], from: now)
+        // 这是只获取了当前时间的年份和月份信息，没有精确到天
+        let firstDayComponents = calendar.dateComponents([.year, .month], from: date)
         
+        // 因此在从 firstDayComponents 中获取日期时，只能到月，返回该月第一天
         guard let firstDayOfMonth = calendar.date(from: firstDayComponents) else {
-            fatalError("无法获取本月第一天")
+            fatalError("无法获取该月第一天")
         }
         
+        // 获取第一天的星期信息，很巧妙的方法
         let weekdayNumber = calendar.component(.weekday, from: firstDayOfMonth)
         
         return weekdayNumber
@@ -178,11 +242,21 @@ class CalendarViewController: UIViewController {
 // MARK: Respond Methods
 extension CalendarViewController {
     @objc private func leftArrowTapped() {
-        
+        // 获取上个月的日期
+        guard let previousMonthDate = calendar.date(byAdding: .month, value: -1, to: now) else { return }
+        // 更新当前日期
+        now = previousMonthDate
+        // 刷新 UI
+        updateCalendarUI()
     }
     
     @objc private func rightArrowTapped() {
-        
+        // 获取下个月的日期
+        guard let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: now) else { return }
+        // 更新当前日期
+        now = nextMonthDate
+        // 刷新 UI
+        updateCalendarUI()
     }
 }
 
@@ -209,7 +283,7 @@ extension CalendarViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarControllerViewCell.reuseIdentifier, for: indexPath) as? CalendarControllerViewCell
         guard let cell = cell else { return CalendarControllerViewCell() }
         
-        let firstWeekDayOfMonth = getFirstWeekDayOfMonth()
+        let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: now)
         
         // 计算偏移量
         // firstWeekDayOfMonth: 1=Sun, 2=Mon, ..., 7=Sat
@@ -229,7 +303,8 @@ extension CalendarViewController: UICollectionViewDataSource {
             cell.isHidden = true
         }
         
-        monthLabel.text = "\(calendar.component(.month, from: now))月"
+        // 这里的 monthLabel 更新已经移到了 updateCalendarUI 中统一处理，这里删除
+        // monthLabel.text = "\(calendar.component(.month, from: now))月"
         
         return cell
     }
@@ -256,7 +331,29 @@ extension CalendarViewController {
         let weekDayString = weekDays[weekdayNumber - 1]
 
         // 结果
-        print("本月第一天是：\(weekDayString)（数字：\(weekdayNumber)）")
+        print("本月第一天是：\(firstDayOfMonth)\(weekDayString)（数字：\(weekdayNumber)）")
+        
+        
+//        if let futureDate = calendar.date(byAdding: .month, value: -1, to: now) {
+//            print("前一个月第一天：\(futureDate)")
+//            // 前一个月第一天：2026-01-09 15:57:20 +0000
+//            // 不是1月1日
+//        } else {
+//            print("计算失败")
+//        }
+        
+        // 上月第一天 = 本月第一天 - 1个月
+        let thisFirstDay = calendar.dateComponents([.year, .month], from: now)
+        guard let firstDayOfCurrentMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else {
+            fatalError("无法获取本月第一天")
+        }
+        
+        if let lastFirstDay = calendar.date(byAdding: .month, value: -1, to: firstDayOfCurrentMonth) {
+            print("前一个月第一天：\(lastFirstDay)")
+            //前一个月第一天：2025-12-31 16:00:00 +0000
+        } else {
+            print("计算失败")
+        }
         
     }
 }
