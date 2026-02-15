@@ -15,6 +15,10 @@ import Foundation
 
 // TODO: 常量数据 constant
 struct Constant {
+    /// 屏幕宽度
+    static let screenWidth = UIScreen.main.bounds.width
+    /// 屏幕高度
+    static let screenHeight = UIScreen.main.bounds.height
     /// 高度
     static let monthLabelHeight = 25
     /// 集合视图单元格间距
@@ -22,7 +26,9 @@ struct Constant {
     /// 组件之间的间距
     static let componentSpacing = 0
     /// 集合视图单元格宽度
-    static let collectionViewCellWidth = 30
+    static let collectionViewCellWidth = (screenWidth - edge * 2)/7
+    /// 组件宽度
+    static let componentWidth = screenWidth - edge * 2
     /// 日历 cell 间的间隔（暂未使用）
     static let spaceInCells = 1
     /// 组件视图左右留白宽度
@@ -83,7 +89,7 @@ class CalendarViewController: UIViewController {
     /// 左箭头
     private lazy var leftArrowImageView: UIImageView = {
         let liv = UIImageView()
-        liv.image = UIImage(named: "")
+        liv.image = UIImage(named: "left_arrow")
         liv.backgroundColor = .yellow
         liv.contentMode = .scaleAspectFit
         liv.isUserInteractionEnabled = true
@@ -99,7 +105,7 @@ class CalendarViewController: UIViewController {
     private lazy var rightArrowImageView: UIImageView = {
         let riv = UIImageView()
         riv.backgroundColor = .yellow
-        riv.image = UIImage(named: "")
+        riv.image = UIImage(named: "right_arrow")
         riv.contentMode = .scaleAspectFit
         riv.isUserInteractionEnabled = true
         let tap = UITapGestureRecognizer(target: self, action: #selector(rightArrowTapped)) // 什么情况要加括号
@@ -136,6 +142,18 @@ class CalendarViewController: UIViewController {
         return ccv
     }()
     
+    private lazy var addButtonImageView: UIImageView = {
+        let abtn = UIImageView()
+        abtn.contentMode = .scaleAspectFill
+        abtn.image = UIImage(named: "add_button")
+        abtn.isUserInteractionEnabled = true
+        let tap = UIGestureRecognizer(target: self, action: #selector(addButtonTapped))
+        abtn.addGestureRecognizer(tap)
+        return abtn
+    }()
+    
+    
+    // MARK: initialize
     override func viewDidLoad() {
         super.viewDidLoad()
         addView()
@@ -145,17 +163,21 @@ class CalendarViewController: UIViewController {
         test()
     }
     
-    /// 更新日历 UI：标题和列表
-    private func updateCalendarUI() {
-        // 1. 更新月份标题
-        let year = calendar.component(.year, from: now)
-        let month = calendar.component(.month, from: now)
-        monthLabel.text = "\(year)年\(month)月"
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         
-        // 2. 刷新 CollectionView
-        CalendarCollectionView.reloadData()
+        print("CalendarCollectionView frame: \(CalendarCollectionView.frame)")
+        print("CalendarCollectionView superview: \(String(describing: CalendarCollectionView.superview))")
+        print("scrollView contentSize: \(scrollView.contentSize)") //(0.0, 0.0)
+        // 说明 contentSize 的大小为0，意思是直接通过最外层的 view 设置约束没有办法撑开 contentSize
+        print("scrollView frame: \(scrollView.frame)")
+        
+        // 加个红色边框看看位置
+        CalendarCollectionView.layer.borderColor = UIColor.red.cgColor
+        CalendarCollectionView.layer.borderWidth = 2
     }
     
+       
     
     // MARK: private methods
     private func addView() {
@@ -163,14 +185,24 @@ class CalendarViewController: UIViewController {
         view.addSubview(monthLabel)
         view.addSubview(leftArrowImageView)
         view.addSubview(rightArrowImageView)
+        view.addSubview(addButtonImageView)
         scrollView.addSubview(weekTitleStackView) // 使用 StackView
         // 直接添加 collectionView
         scrollView.addSubview(CalendarCollectionView)
     }
     
+    /// 更新日历 UI：标题和列表
+    private func updateCalendarUI() {
+        // 1. 更新月份标题
+        let year = calendar.component(.year, from: now)
+        let month = calendar.component(.month, from: now)
+        monthLabel.text = "\(year).\(month)"
+        
+        // 2. 刷新 CollectionView
+        CalendarCollectionView.reloadData()
+    }
+    
     private func makeConstraints() {
-        
-        
         monthLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().inset(50)
             make.left.equalToSuperview().inset(Constant.edge)
@@ -179,7 +211,7 @@ class CalendarViewController: UIViewController {
         rightArrowImageView.snp.makeConstraints { make in
             make.top.equalTo(monthLabel)
             make.right.equalToSuperview().inset(Constant.edge)
-            make.size.equalTo(CGSize(width: 10, height: 20))
+            make.size.equalTo(CGSize(width: 30, height: 30))
         }
         
         leftArrowImageView.snp.makeConstraints { make in
@@ -188,24 +220,33 @@ class CalendarViewController: UIViewController {
             // 这里想让 leftArrow 在 rightArrow 的左边，应该用 make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
             // 或者 make.trailing.equalTo(rightArrowImageView.snp.leading).offset(-5)
             make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
-            make.size.equalTo(CGSize(width: 10, height: 20))
+            make.size.equalTo(CGSize(width: 30, height: 30))
+        }
+        
+        addButtonImageView.snp.makeConstraints { make in
+            make.right.equalToSuperview().inset(30)
+            make.bottom.equalToSuperview().inset(200)
+            make.width.height.equalTo(70)
         }
         
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(monthLabel.snp.bottom).offset(-5)
-            make.left.right.equalToSuperview().inset(Constant.edge)
+            make.top.equalTo(monthLabel.snp.bottom).offset(5)
+            make.left.right.bottom.equalToSuperview()
         }
         
         weekTitleStackView.snp.makeConstraints { make in
             make.top.equalTo(monthLabel.snp.bottom).offset(5)
-            make.left.right.equalTo(view).inset(Constant.edge)
+            make.width.equalTo(Constant.componentWidth)
             make.height.equalTo(Constant.weekTitleViewHeight)
+            make.centerX.equalToSuperview()
         }
         
         CalendarCollectionView.snp.makeConstraints { make in
             make.top.equalTo(weekTitleStackView.snp.bottom).offset(3)
-            make.left.right.equalTo(view).inset(Constant.edge)
+            make.width.equalTo(Constant.componentWidth)
+            // 改成这样以后就可以显示出日历了，但是 contentSize 依旧是(0.0, 0.0)
             make.height.equalTo(sigalItemW * 5)
+            make.centerX.equalToSuperview()
         }
     }
     
@@ -257,6 +298,10 @@ extension CalendarViewController {
         now = nextMonthDate
         // 刷新 UI
         updateCalendarUI()
+    }
+    
+    @objc private func addButtonTapped() {
+        
     }
 }
 
