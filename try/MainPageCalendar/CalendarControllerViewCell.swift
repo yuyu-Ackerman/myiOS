@@ -15,7 +15,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
     // MARK: UI 控件
     let backgroundImageView: UIImageView = {
         let bgImageView = UIImageView()
-        bgImageView.layer.cornerRadius = 5
+        bgImageView.layer.cornerRadius = 10
         bgImageView.clipsToBounds = true
         bgImageView.contentMode = .scaleAspectFit // 不同的填充方式
         return bgImageView
@@ -24,14 +24,14 @@ class CalendarControllerViewCell: UICollectionViewCell {
     let maskImageView: UIView = { // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
     let mv = UIView()
         mv.backgroundColor = .black
-        mv.alpha = 0.5
+        mv.alpha = 0.3
         return mv
     }()
     
     let dateLabel: UILabel = {
         let dbl = UILabel()
-        dbl.textColor = .white
-        dbl.font = .systemFont(ofSize: 14, weight: .bold)
+        dbl.textColor = .label
+        dbl.font = .systemFont(ofSize: 22, weight: .bold)
         return dbl
     }()
     

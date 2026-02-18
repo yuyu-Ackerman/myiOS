@@ -22,6 +22,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = rootVC
         self.window = window
         window.makeKeyAndVisible()
+       // window.overrideUserInterfaceStyle = .unspecified
     }
 
 

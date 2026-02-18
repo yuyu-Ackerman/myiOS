@@ -4,11 +4,14 @@
 //
 //  Created by 小余 on 2025/12/29.
 //
-
+/*
 
 // TODO: 1.scrollView contentSize 可以根据约束自动撑开吗？必须要设置吗？所有视图都坍缩了，我怀疑之前 collectionView 的问题也是因为 scrollView。回头研究一下他的 contentSize
+ // TODO: 2.背景都为黑色，即使没有打开黑夜模式，是因为默认背景为黑色吗
+ A: 添加了这一句：self.view.backgroundColor = .systemBackground 把背景色设为系统背景，但这仅仅在当前页面有效，无法全局应用
 
 
+*/
 import UIKit
 import SnapKit
 import Foundation
@@ -75,14 +78,11 @@ class CalendarViewController: UIViewController {
         return slv
     }()
     
-    /// 内容容器视图，用于辅助 ScrollView 布局
-    private let contentView = UIView()
-    
     /// 月表示标签
-    private let monthLabel: UILabel = {
+    private lazy var monthLabel: UILabel = {
         let mlbl = UILabel()
-        mlbl.textColor = .white
-        mlbl.font = .systemFont(ofSize: 30, weight: .bold)
+        mlbl.textColor = .label
+        mlbl.font = .systemFont(ofSize: 40, weight: .bold)
         return mlbl
     }()
     
@@ -90,7 +90,7 @@ class CalendarViewController: UIViewController {
     private lazy var leftArrowImageView: UIImageView = {
         let liv = UIImageView()
         liv.image = UIImage(named: "left_arrow")
-        liv.backgroundColor = .yellow
+        liv.backgroundColor = .clear
         liv.contentMode = .scaleAspectFit
         liv.isUserInteractionEnabled = true
         // TODO: K
@@ -104,7 +104,7 @@ class CalendarViewController: UIViewController {
     /// 右箭头
     private lazy var rightArrowImageView: UIImageView = {
         let riv = UIImageView()
-        riv.backgroundColor = .yellow
+        riv.backgroundColor = .clear
         riv.image = UIImage(named: "right_arrow")
         riv.contentMode = .scaleAspectFit
         riv.isUserInteractionEnabled = true
@@ -136,7 +136,7 @@ class CalendarViewController: UIViewController {
         let ccv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         ccv.delegate = self
         ccv.dataSource = self
-        ccv.backgroundColor = .yellow
+        ccv.backgroundColor = .clear
         ccv.showsHorizontalScrollIndicator = false
         ccv.register(CalendarControllerViewCell.self, forCellWithReuseIdentifier: CalendarControllerViewCell.reuseIdentifier)
         return ccv
@@ -147,7 +147,7 @@ class CalendarViewController: UIViewController {
         abtn.contentMode = .scaleAspectFill
         abtn.image = UIImage(named: "add_button")
         abtn.isUserInteractionEnabled = true
-        let tap = UIGestureRecognizer(target: self, action: #selector(addButtonTapped))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(addButtonTapped))
         abtn.addGestureRecognizer(tap)
         return abtn
     }()
@@ -156,6 +156,8 @@ class CalendarViewController: UIViewController {
     // MARK: initialize
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.view.backgroundColor = .systemBackground
+        //self.overrideUserInterfaceStyle = .unspecified
         addView()
         makeConstraints()
         setWeekTitle()
@@ -173,8 +175,8 @@ class CalendarViewController: UIViewController {
         print("scrollView frame: \(scrollView.frame)")
         
         // 加个红色边框看看位置
-        CalendarCollectionView.layer.borderColor = UIColor.red.cgColor
-        CalendarCollectionView.layer.borderWidth = 2
+//        CalendarCollectionView.layer.borderColor = UIColor.red.cgColor
+//        CalendarCollectionView.layer.borderWidth = 2
     }
     
        
@@ -204,14 +206,15 @@ class CalendarViewController: UIViewController {
     
     private func makeConstraints() {
         monthLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().inset(50)
+//            make.top.equalToSuperview().inset(50)
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(10) // 约束在顶部安全区下
             make.left.equalToSuperview().inset(Constant.edge)
         }
         
         rightArrowImageView.snp.makeConstraints { make in
             make.top.equalTo(monthLabel)
             make.right.equalToSuperview().inset(Constant.edge)
-            make.size.equalTo(CGSize(width: 30, height: 30))
+            make.size.equalTo(CGSize(width: monthLabel.font.lineHeight, height: monthLabel.font.lineHeight))
         }
         
         leftArrowImageView.snp.makeConstraints { make in
@@ -220,7 +223,7 @@ class CalendarViewController: UIViewController {
             // 这里想让 leftArrow 在 rightArrow 的左边，应该用 make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
             // 或者 make.trailing.equalTo(rightArrowImageView.snp.leading).offset(-5)
             make.right.equalTo(rightArrowImageView.snp.left).offset(-5)
-            make.size.equalTo(CGSize(width: 30, height: 30))
+            make.size.equalTo(CGSize(width: monthLabel.font.lineHeight, height: monthLabel.font.lineHeight))
         }
         
         addButtonImageView.snp.makeConstraints { make in
@@ -230,12 +233,12 @@ class CalendarViewController: UIViewController {
         }
         
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(monthLabel.snp.bottom).offset(5)
+            make.top.equalTo(monthLabel.snp.bottom).offset(10)
             make.left.right.bottom.equalToSuperview()
         }
         
         weekTitleStackView.snp.makeConstraints { make in
-            make.top.equalTo(monthLabel.snp.bottom).offset(5)
+            make.top.equalToSuperview()
             make.width.equalTo(Constant.componentWidth)
             make.height.equalTo(Constant.weekTitleViewHeight)
             make.centerX.equalToSuperview()
@@ -255,9 +258,9 @@ class CalendarViewController: UIViewController {
         for title in weekTitle {
             let label = UILabel()
             label.text = title
-            label.textColor = .white
+            label.textColor = .label
             label.textAlignment = .center
-            label.font = .systemFont(ofSize: 16, weight: .bold)
+            label.font = .systemFont(ofSize: 22, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
         }
     }
@@ -301,6 +304,9 @@ extension CalendarViewController {
     }
     
     @objc private func addButtonTapped() {
+        let editDiaryVC = DiaryEditViewController()
+        editDiaryVC.modalPresentationStyle = .fullScreen
+        self.present(editDiaryVC, animated: true)
         
     }
 }

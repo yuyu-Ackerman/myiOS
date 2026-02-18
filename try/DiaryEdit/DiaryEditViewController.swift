@@ -8,16 +8,27 @@
 import UIKit
 import SnapKit
 
-class ViewController: UIViewController {
+class DiaryEditViewController: UIViewController {
     
     private var isPlaceholderActive: Bool = true
 
     // MARK: UI 控件
+    private lazy var backButtonImageView: UIImageView = {
+        let biv = UIImageView()
+        biv.contentMode = .scaleAspectFill
+        biv.isUserInteractionEnabled = true
+        biv.image = UIImage(named: "left_arrow")
+        let tap = UITapGestureRecognizer(target: self, action: #selector(backButtonTapped))
+        biv.addGestureRecognizer(tap)
+        //biv.image = UIImage(systemName: )
+        return biv
+    }()
+    
     private let titleLabel: UILabel = {
         let title = UILabel()
         title.text = "今日"
         title.textColor = .black
-        title.font = .systemFont(ofSize: 20)
+        title.font = .systemFont(ofSize: 24, weight: .bold)
         return title
     }()
     
@@ -99,6 +110,7 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.view.backgroundColor = .systemBackground
         addView()
         setConstraints()
     
@@ -107,6 +119,7 @@ class ViewController: UIViewController {
     //MARK: Private Methods
     private func addView() {
         view.addSubview(titleLabel)
+        view.addSubview(backButtonImageView)
         view.addSubview(splitLine)
         view.addSubview(contentScrollView)
         view.addSubview(bottomButton)
@@ -122,8 +135,14 @@ class ViewController: UIViewController {
     private func setConstraints() {
         
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(56)
+            make.top.equalTo(self.view.safeAreaLayoutGuide.snp.top).offset(10)
             make.centerX.equalToSuperview()
+        }
+        
+        backButtonImageView.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.top)
+            make.left.equalToSuperview().inset(24)
+            make.height.width.equalTo(titleLabel.font.lineHeight)
         }
         
         splitLine.snp.makeConstraints { make in
@@ -181,7 +200,7 @@ class ViewController: UIViewController {
     }
 }
 
-extension ViewController: UITextViewDelegate {
+extension DiaryEditViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if isPlaceholderActive {
             textView.text = ""
@@ -191,3 +210,8 @@ extension ViewController: UITextViewDelegate {
     }
 }
 
+extension DiaryEditViewController {
+    @objc private func backButtonTapped() {
+        self.dismiss(animated: true, completion: nil)
+    }
+}
