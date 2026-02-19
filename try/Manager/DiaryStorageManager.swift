@@ -1,0 +1,102 @@
+import Foundation
+import UIKit
+
+// 日记模型
+
+
+class DiaryStorageManager {
+    static let shared = DiaryStorageManager()
+    
+    private init() {}
+    
+    // 获取 Documents 目录路径
+    private var documentsDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    // 获取日记数据文件的路径
+    private var dataFilePath: URL {
+        return documentsDirectory.appendingPathComponent("diaries.json")
+    }
+    
+    // 保存日记
+    // images: 包含 UIImage 对象的数组
+    func saveDiary(date: Date, score: Float, content: String, images: [UIImage]) {
+        // 1. 保存图片到磁盘
+        var savedImagePaths: [String] = []
+        for image in images {
+            let imageName = UUID().uuidString + ".jpg"
+            let imagePath = documentsDirectory.appendingPathComponent(imageName)
+            
+            if let data = image.jpegData(compressionQuality: 0.8) {
+                try? data.write(to: imagePath)
+                savedImagePaths.append(imageName)
+            }
+        }
+        
+        // 2. 创建新的 Entry
+        let newEntry = DiaryEntry(date: date, score: score, content: content, imagePaths: savedImagePaths)
+        
+        // 3. 读取现有日记并更新
+        var diaries = getAllDiaries()
+        
+        // 移除同一天的旧日记 (假设每天只能有一篇日记)
+        diaries.removeAll { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        
+        diaries.append(newEntry)
+        
+        // 4. 写入文件
+        if let data = try? JSONEncoder().encode(diaries) {
+            try? data.write(to: dataFilePath)
+            print("日记保存成功: \(newEntry)")
+        } else {
+            print("日记保存失败")
+        }
+        
+        // 发送通知，告知数据更新
+        NotificationCenter.default.post(name: NSNotification.Name("DiaryUpdated"), object: nil)
+    }
+    
+    // 获取所有日记
+    func getAllDiaries() -> [DiaryEntry] {
+        guard let data = try? Data(contentsOf: dataFilePath) else { return [] }
+        guard let diaries = try? JSONDecoder().decode([DiaryEntry].self, from: data) else { return [] }
+        return diaries
+    }
+    
+    // 获取特定日期的日记
+    func getDiary(for date: Date) -> DiaryEntry? {
+        let diaries = getAllDiaries()
+        return diaries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+    
+    // 加载图片
+    func loadImage(named imageName: String) -> UIImage? {
+        let imagePath = documentsDirectory.appendingPathComponent(imageName)
+        return UIImage(contentsOfFile: imagePath.path)
+    }
+    
+    // 删除日记
+    func deleteDiary(for date: Date) {
+        var diaries = getAllDiaries()
+        // 找到要删除的日记
+        if let index = diaries.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: date) }) {
+            let diaryToDelete = diaries[index]
+            
+            // 删除关联的图片文件
+            for imageName in diaryToDelete.imagePaths {
+                let imagePath = documentsDirectory.appendingPathComponent(imageName)
+                try? FileManager.default.removeItem(at: imagePath)
+            }
+            
+            diaries.remove(at: index)
+            
+            // 保存更改
+            if let data = try? JSONEncoder().encode(diaries) {
+                try? data.write(to: dataFilePath)
+            }
+            
+            NotificationCenter.default.post(name: NSNotification.Name("DiaryUpdated"), object: nil)
+        }
+    }
+}

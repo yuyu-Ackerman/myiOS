@@ -47,6 +47,15 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return view
     }()
     
+    /// 日记标记小圆点
+    private lazy var diaryIndicatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemBlue
+        view.layer.cornerRadius = 3
+        view.isHidden = true
+        return view
+    }()
+    
     // MARK: 初始化方法
     override init(frame: CGRect) {
         super.init(frame: frame) // 初始化参数?
@@ -63,6 +72,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         todayHighLightView.isHidden = true
         // 我为当前日期添加高光时，一开始没有重写该方法，导致复用时出现错误：我向前/向后切换月份时，出现了很多日期同时被高光的情况，在添加该方法和 todayHighLightView.isHidden = true 这一句后多高光问题解决
         // 所以！复用前一定要重置状态！
+        diaryIndicatorView.isHidden = true
         
     }
     
@@ -80,6 +90,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         contentView.addSubview(maskImageView)
         contentView.addSubview(todayHighLightView)
         contentView.addSubview(dateLabel)
+        contentView.addSubview(diaryIndicatorView)
         
         backgroundImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -98,6 +109,12 @@ class CalendarControllerViewCell: UICollectionViewCell {
             make.center.equalToSuperview()
         }
         
+        diaryIndicatorView.snp.makeConstraints { make in
+            make.width.height.equalTo(6)
+            make.centerX.equalToSuperview()
+            make.top.equalTo(dateLabel.snp.bottom).offset(2)
+        }
+        
     }
     
     // MARK: public method
@@ -111,5 +128,9 @@ class CalendarControllerViewCell: UICollectionViewCell {
     
     func showTodayHighLight() {
         todayHighLightView.isHidden = false
+    }
+    
+    func showDiaryIndicator(_ show: Bool) {
+        diaryIndicatorView.isHidden = !show
     }
 }

@@ -68,6 +68,14 @@ class CalendarViewController: UIViewController {
         return cal
     }()
     
+    private var diaryDates: Set<String> = []
+    
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+    
     // MARK: UI 控件
     /// 整个屏幕内的 scrollView 便于滑动展示信息
     private lazy var scrollView: UIScrollView = {
@@ -162,8 +170,16 @@ class CalendarViewController: UIViewController {
         addView()
         makeConstraints()
         setWeekTitle()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDiaryUpdate), name: NSNotification.Name("DiaryUpdated"), object: nil)
+        fetchDiaryDates()
+        
         updateCalendarUI()
         test()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -289,6 +305,12 @@ class CalendarViewController: UIViewController {
         return today
     }
     
+    private func fetchDiaryDates() {
+        let diaries = DiaryStorageManager.shared.getAllDiaries()
+        diaryDates = Set(diaries.map { dateFormatter.string(from: $0.date) })
+        CalendarCollectionView.reloadData()
+    }
+    
 }
 
 // MARK: Respond Methods
@@ -317,6 +339,10 @@ extension CalendarViewController {
         self.present(editDiaryVC, animated: true)
         
     }
+    
+    @objc private func handleDiaryUpdate() {
+        fetchDiaryDates()
+    }
 }
 
 // MARK: UIScrollViewDelegate
@@ -326,7 +352,29 @@ extension CalendarViewController: UIScrollViewDelegate {
 
 // MARK: UICollectionViewDelegate
 extension CalendarViewController: UICollectionViewDelegate {
-    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: changedDate)
+        var offset = firstWeekDayOfMonth - calendar.firstWeekday
+        if offset < 0 {
+            offset += 7
+        }
+        
+        let day = indexPath.item - offset + 1
+        let daysInMonth = calendar.range(of: .day, in: .month, for: changedDate)?.count ?? 30
+        
+        if day > 0 && day <= daysInMonth {
+            var dateComponents = calendar.dateComponents([.year, .month], from: changedDate)
+            dateComponents.day = day
+            
+            if let cellDate = calendar.date(from: dateComponents) {
+                // Open Diary Edit
+                let editDiaryVC = DiaryEditViewController()
+                editDiaryVC.currentDate = cellDate
+                editDiaryVC.modalPresentationStyle = .fullScreen
+                self.present(editDiaryVC, animated: true)
+            }
+        }
+    }
 }
 
 // MARK: UICollectionViewDataSource
@@ -389,6 +437,10 @@ extension CalendarViewController: UICollectionViewDataSource {
                     // 今天之后的日期 (未来) -> 正常显示
                     // cell.showMaskImageView() // 如果未来不可用，则在这里显示 mask
                 }
+                
+                // 检查是否有日记
+                let dateString = dateFormatter.string(from: cellDate)
+                cell.showDiaryIndicator(diaryDates.contains(dateString))
             }
         } else {
             cell.isHidden = true

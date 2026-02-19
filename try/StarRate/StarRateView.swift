@@ -38,6 +38,11 @@ class StarRateView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    public func setScore(_ score: Float) {
+        self.currentCount = score
+        updateStarView()
+    }
+    
     private func setupUI() {
         addSubview(unstarView)
         addSubview(starView)

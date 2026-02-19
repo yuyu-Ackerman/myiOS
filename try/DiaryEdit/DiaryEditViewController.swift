@@ -59,7 +59,7 @@ class DiaryEditViewController: UIViewController {
         // 接收评分回调并打印
         srv.starScoreClousure = {[weak self] score in  // [weak self] 避免强引用
             print("当前评分：\(score)")
-//            viewModel.setStarRate(with: score)
+            self?.viewModel.starRate = score //
         }
         return srv
     }()
@@ -100,22 +100,77 @@ class DiaryEditViewController: UIViewController {
         return view
     }()
     
-    private let bottomButton: UIButton = {
+    private lazy var bottomButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("保存", for: .normal)
         btn.setTitleColor(.white, for: .normal)
-        btn.backgroundColor = .black
+        btn.backgroundColor = .label
         btn.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
         btn.layer.cornerRadius = 15
+        btn.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
         return btn
     }()
+    
+    // 当前编辑的日期，默认为今天。应该由外部传入
+    var currentDate: Date = Date() {
+        didSet {
+            // 如果视图已经加载，更新标题
+            if isViewLoaded {
+                updateTitle()
+                // 清除旧数据重新加载？通常只会设置一次
+            }
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .systemBackground
         addView()
         setConstraints()
+        
+        updateTitle()
+        loadDiaryData()
+    }
     
+    private func updateTitle() {
+        if Calendar.current.isDateInToday(currentDate) {
+            titleLabel.text = "今日"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MM月dd日"
+            titleLabel.text = formatter.string(from: currentDate)
+        }
+    }
+    
+    private func loadDiaryData() {
+        if let diary = DiaryStorageManager.shared.getDiary(for: currentDate) {
+            // Populate ViewModel
+            viewModel.starRate = diary.score
+            viewModel.description = diary.content
+            
+            // Update UI
+            // 延迟一点设置评分，确保视图布局完成（虽然 snapkit 应该能处理）
+            DispatchQueue.main.async {
+                self.starRateView.setScore(diary.score)
+            }
+            
+            if !diary.content.isEmpty {
+                textEditView.text = diary.content
+                textEditView.textColor = .label
+                isPlaceholderActive = false
+            }
+            
+            // Load images
+            var images: [UIImage] = []
+            for path in diary.imagePaths {
+                if let image = DiaryStorageManager.shared.loadImage(named: path) {
+                    images.append(image)
+                }
+            }
+            if !images.isEmpty {
+                pictureContainerView.addImages(images, animated: false)
+            }
+        }
     }
     
     //MARK: Private Methods
@@ -206,14 +261,35 @@ extension DiaryEditViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if isPlaceholderActive {
             textView.text = ""
-            textView.textColor = .black
+            textView.textColor = .label
             isPlaceholderActive = false
         }
+    }
+    
+    func textViewDidChange(_ textView: UITextView) {
+        viewModel.description = textView.text
     }
 }
 
 extension DiaryEditViewController {
     @objc private func backButtonTapped() {
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func saveButtonTapped() {
+        // 获取数据
+        let score = viewModel.starRate
+        let content = viewModel.description
+        let images = pictureContainerView.getAllImages()
+        
+        // 保存
+        DiaryStorageManager.shared.saveDiary(date: currentDate, score: score, content: content, images: images)
+        
+        // 提示成功并退出
+        let alert = UIAlertController(title: "成功", message: "日记已保存", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "好的", style: .default, handler: { [weak self] _ in
+            self?.dismiss(animated: true, completion: nil)
+        }))
+        self.present(alert, animated: true)
     }
 }

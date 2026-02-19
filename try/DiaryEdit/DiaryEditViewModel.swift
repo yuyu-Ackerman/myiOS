@@ -1,5 +1,5 @@
 //
-//  DiaryEditViewViewModel.swift
+//  DiaryEditViewModel.swift
 //  try
 //
 //  Created by 小余 on 2026/2/18.
@@ -8,34 +8,26 @@
 import UIKit
 
 class DiaryEditViewModel {
-    let model = DiaryEditModel()
+    // MARK: - Properties
     
-    func getStarRate() -> Float {
-        return model.starRate
-    }
+    /// 评分 (0-5)
+    var starRate: Float = 0
     
-    func getDescription() -> String {
-        return model.description
-    }
+    /// 日记内容
+    var description: String = ""
     
-    func getPictures() -> [UIImage] {
-        return model.pictures
-    }
+    /// 图片列表 (用于暂存编辑时的图片)
+    var pictures: [UIImage] = []
     
-    func getFirstPicture() -> UIImage {
-        return model.pictures.first ?? UIImage()
-    }
+    // MARK: - Initialization
     
-    func setStarRate(with starRate: Float) {
-        model.starRate = starRate
-    }
+    init() {}
     
-    func setDescription(with text: String) {
-        model.description = text
-    }
+    // MARK: - Helper Methods
     
-    func setPictures(with images: [UIImage]) {
-        model.pictures = images
+    func reset() {
+        starRate = 0
+        description = ""
+        pictures = []
     }
 }
-
