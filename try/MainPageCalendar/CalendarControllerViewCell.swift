@@ -21,10 +21,12 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return bgImageView
     }()
     
-    let maskImageView: UIView = { // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
+    // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
+    let maskImageView: UIView = {
     let mv = UIView()
         mv.backgroundColor = .black
         mv.alpha = 0.3
+        mv.isHidden = true
         return mv
     }()
     
@@ -35,10 +37,33 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return dbl
     }()
     
+    let todayHighLightView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .yellow
+        view.layer.cornerRadius = Constant.collectionViewCellWidth/2
+//        view.layer.borderWidth = 0.5
+//        view.layer.borderColor = UIColor.gray.cgColor
+        view.isHidden = true
+        return view
+    }()
+    
     // MARK: 初始化方法
     override init(frame: CGRect) {
-        super.init(frame: frame) 
+        super.init(frame: frame) // 初始化参数?
         setupUI()
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        backgroundImageView.image = nil
+        // maskImageView.backgroundColor = nil // 不应清除背景色，这会导致它变透明
+        maskImageView.isHidden = true // 关键：重置显隐状态
+        dateLabel.text = nil
+       // todayHighLightView.backgroundColor = nil
+        todayHighLightView.isHidden = true
+        // 我为当前日期添加高光时，一开始没有重写该方法，导致复用时出现错误：我向前/向后切换月份时，出现了很多日期同时被高光的情况，在添加该方法和 todayHighLightView.isHidden = true 这一句后多高光问题解决
+        // 所以！复用前一定要重置状态！
+        
     }
     
     required init?(coder: NSCoder) {
@@ -53,6 +78,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         
         contentView.addSubview(backgroundImageView)
         contentView.addSubview(maskImageView)
+        contentView.addSubview(todayHighLightView)
         contentView.addSubview(dateLabel)
         
         backgroundImageView.snp.makeConstraints { make in
@@ -67,9 +93,23 @@ class CalendarControllerViewCell: UICollectionViewCell {
             make.center.equalToSuperview()
         }
         
+        todayHighLightView.snp.makeConstraints { make in
+            make.height.width.equalTo(Constant.collectionViewCellWidth)
+            make.center.equalToSuperview()
+        }
+        
     }
     
+    // MARK: public method
     func configDate(with dateNum: Int) {
         dateLabel.text = String(dateNum)
+    }
+    
+    func showMaskImageView() {
+        maskImageView.isHidden = false
+    }
+    
+    func showTodayHighLight() {
+        todayHighLightView.isHidden = false
     }
 }

@@ -39,7 +39,7 @@ struct Constant {
     /// 星期排头高度
     static let weekTitleViewHeight = 40
     /// cell 格子数
-    static let datenum = 35
+    static let datenum = 42
 }
 
 /// 首页日历视图
@@ -59,6 +59,7 @@ class CalendarViewController: UIViewController {
 //    calendar.timeZone = TimeZone.current
     
     var now = Date()
+    var changedDate = Date()
     
     let calendar: Calendar = {
         var cal = Calendar.current
@@ -196,8 +197,8 @@ class CalendarViewController: UIViewController {
     /// 更新日历 UI：标题和列表
     private func updateCalendarUI() {
         // 1. 更新月份标题
-        let year = calendar.component(.year, from: now)
-        let month = calendar.component(.month, from: now)
+        let year = calendar.component(.year, from: changedDate)
+        let month = calendar.component(.month, from: changedDate)
         monthLabel.text = "\(year).\(month)"
         
         // 2. 刷新 CollectionView
@@ -248,7 +249,7 @@ class CalendarViewController: UIViewController {
             make.top.equalTo(weekTitleStackView.snp.bottom).offset(3)
             make.width.equalTo(Constant.componentWidth)
             // 改成这样以后就可以显示出日历了，但是 contentSize 依旧是(0.0, 0.0)
-            make.height.equalTo(sigalItemW * 5)
+            make.height.equalTo(sigalItemW * 6)
             make.centerX.equalToSuperview()
         }
     }
@@ -281,24 +282,31 @@ class CalendarViewController: UIViewController {
         
         return weekdayNumber
     }
+    
+    /// 获取当天信息
+    private func getTodayInfo() -> DateComponents {
+        let today = calendar.dateComponents([.year, .month, .day], from: now)
+        return today
+    }
+    
 }
 
 // MARK: Respond Methods
 extension CalendarViewController {
     @objc private func leftArrowTapped() {
         // 获取上个月的日期
-        guard let previousMonthDate = calendar.date(byAdding: .month, value: -1, to: now) else { return }
+        guard let previousMonthDate = calendar.date(byAdding: .month, value: -1, to: changedDate) else { return }
         // 更新当前日期
-        now = previousMonthDate
+        changedDate = previousMonthDate
         // 刷新 UI
         updateCalendarUI()
     }
     
     @objc private func rightArrowTapped() {
         // 获取下个月的日期
-        guard let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: now) else { return }
+        guard let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: changedDate) else { return }
         // 更新当前日期
-        now = nextMonthDate
+        changedDate = nextMonthDate
         // 刷新 UI
         updateCalendarUI()
     }
@@ -334,7 +342,7 @@ extension CalendarViewController: UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CalendarControllerViewCell.reuseIdentifier, for: indexPath) as? CalendarControllerViewCell
         guard let cell = cell else { return CalendarControllerViewCell() }
         
-        let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: now)
+        let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: changedDate)
         
         // 计算偏移量
         // firstWeekDayOfMonth: 1=Sun, 2=Mon, ..., 7=Sat
@@ -345,11 +353,43 @@ extension CalendarViewController: UICollectionViewDataSource {
         }
         
         let day = indexPath.item - offset + 1
-        let daysInMonth = calendar.range(of: .day, in: .month, for: now)?.count ?? 30
+        let daysInMonth = calendar.range(of: .day, in: .month, for: changedDate)?.count ?? 30
         
         if day > 0 && day <= daysInMonth {
             cell.configDate(with: day)
             cell.isHidden = false
+            
+            /*
+             let dayToToday = calendar.dateComponents([.day], from: changedDate, to: now)
+                         if dayToToday.day ?? 0 > 0 {
+                             cell.showMaskImageView()
+                         } else if dayToToday.day == 0 {
+                             let today = calendar.component(.day, from: now)
+                             if indexPath.item < today {
+                                 cell.showMaskImageView()
+                             } else if indexPath.item == today {
+             */
+            
+            // 构造当前 cell 代表的完整日期
+            var dateComponents = calendar.dateComponents([.year, .month], from: changedDate)
+            dateComponents.day = day
+                        
+            if let cellDate = calendar.date(from: dateComponents) {
+                // 比较 cell 日期和今天 (now)
+                // 使用 compare(_:to:toGranularity:) 忽略时分秒差异，只比较日期
+                let comparison = calendar.compare(cellDate, to: now, toGranularity: .day)
+                
+                if comparison == .orderedSame {
+                    // 是今天
+                    cell.showTodayHighLight()
+                } else if comparison == .orderedAscending {
+                    // 今天之前的日期 (过去) -> 显示遮罩 (假设业务需求是过去不可用/已过期)
+                    cell.showMaskImageView()
+                } else {
+                    // 今天之后的日期 (未来) -> 正常显示
+                    // cell.showMaskImageView() // 如果未来不可用，则在这里显示 mask
+                }
+            }
         } else {
             cell.isHidden = true
         }
@@ -453,3 +493,4 @@ extension CalendarViewController {
    - bottom/right : 正值向左上移（减小坐标）。
    - 例如： make.right.equalToSuperview().inset(10) 意味着 view 的右边缘距离 superview 的右边缘 10pt。
  */
+

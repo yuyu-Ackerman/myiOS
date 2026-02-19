@@ -29,7 +29,7 @@ class StarRateConfigration {
     
     init(starType: StarType = .half,
          starCount: Int = 5,
-         leastCount: Float = 2,
+         leastCount: Float = 0,
          starSpace: CGFloat = 10,
          isPanable: Bool = true,
          isEditable: Bool = true) {

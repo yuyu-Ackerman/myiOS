@@ -10,6 +10,7 @@ import SnapKit
 
 class DiaryEditViewController: UIViewController {
     
+    private let viewModel = DiaryEditViewModel()
     private var isPlaceholderActive: Bool = true
 
     // MARK: UI 控件
@@ -58,6 +59,7 @@ class DiaryEditViewController: UIViewController {
         // 接收评分回调并打印
         srv.starScoreClousure = {[weak self] score in  // [weak self] 避免强引用
             print("当前评分：\(score)")
+//            viewModel.setStarRate(with: score)
         }
         return srv
     }()
