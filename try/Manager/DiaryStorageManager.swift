@@ -5,21 +5,22 @@ import UIKit
 
 
 class DiaryStorageManager {
-    static let shared = DiaryStorageManager()
+    static let shared = DiaryStorageManager() // TODO: 这是什么写法
     
-    private init() {}
+    private init() {} // TODO: 为什么要留一个空的 init
     
-    // 获取 Documents 目录路径
+    /// 获取 Documents 目录路径
     private var documentsDirectory: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        // TODO: 可以深入了解一下相关知识
     }
     
-    // 获取日记数据文件的路径
+    /// 获取日记数据文件的路径
     private var dataFilePath: URL {
         return documentsDirectory.appendingPathComponent("diaries.json")
     }
     
-    // 保存日记
+    /// 保存日记
     // images: 包含 UIImage 对象的数组
     func saveDiary(date: Date, score: Float, content: String, images: [UIImage]) {
         // 1. 保存图片到磁盘
@@ -28,8 +29,9 @@ class DiaryStorageManager {
             let imageName = UUID().uuidString + ".jpg"
             let imagePath = documentsDirectory.appendingPathComponent(imageName)
             
-            if let data = image.jpegData(compressionQuality: 0.8) {
+            if let data = image.pngData() {
                 try? data.write(to: imagePath)
+                // TODO: 为什么 try 后面要加问号
                 savedImagePaths.append(imageName)
             }
         }
@@ -54,6 +56,7 @@ class DiaryStorageManager {
         }
         
         // 发送通知，告知数据更新
+        // TODO: 这个是什么东西、具体怎么使用？与协议和闭包回调有什么区别，什么情况下该用这个？
         NotificationCenter.default.post(name: NSNotification.Name("DiaryUpdated"), object: nil)
     }
     
@@ -71,6 +74,7 @@ class DiaryStorageManager {
     }
     
     // 加载图片
+    // TODO: 这个方法没看懂
     func loadImage(named imageName: String) -> UIImage? {
         let imagePath = documentsDirectory.appendingPathComponent(imageName)
         return UIImage(contentsOfFile: imagePath.path)

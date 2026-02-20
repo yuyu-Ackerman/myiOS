@@ -95,17 +95,14 @@ class DiaryEditViewController: UIViewController {
         return label
     }()
     
-    private let pictureContainerView: ImageDragGridView = {
-        let view = ImageDragGridView()
-        return view
-    }()
+    private let pictureContainerView = ImageDragGridView()
     
     private lazy var bottomButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("保存", for: .normal)
         btn.setTitleColor(.white, for: .normal)
         btn.backgroundColor = .label
-        btn.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
+        btn.titleLabel?.font = .systemFont(ofSize: 22, weight: .bold)
         btn.layer.cornerRadius = 15
         btn.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
         return btn
@@ -132,6 +129,8 @@ class DiaryEditViewController: UIViewController {
         loadDiaryData()
     }
     
+    //MARK: Private Methods
+    /// 更新编辑界面标题
     private func updateTitle() {
         if Calendar.current.isDateInToday(currentDate) {
             titleLabel.text = "今日"
@@ -142,6 +141,7 @@ class DiaryEditViewController: UIViewController {
         }
     }
     
+    /// 加载对应日期的日记信息
     private func loadDiaryData() {
         if let diary = DiaryStorageManager.shared.getDiary(for: currentDate) {
             // Populate ViewModel
@@ -173,7 +173,6 @@ class DiaryEditViewController: UIViewController {
         }
     }
     
-    //MARK: Private Methods
     private func addView() {
         view.addSubview(titleLabel)
         view.addSubview(backButtonImageView)
@@ -257,6 +256,7 @@ class DiaryEditViewController: UIViewController {
     }
 }
 
+// MARK: UITextViewDelegate
 extension DiaryEditViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if isPlaceholderActive {
@@ -271,11 +271,22 @@ extension DiaryEditViewController: UITextViewDelegate {
     }
 }
 
+// MARK: Respond methods
 extension DiaryEditViewController {
+    /// 返回按钮点击响应
     @objc private func backButtonTapped() {
-        self.dismiss(animated: true, completion: nil)
+        let alert = UIAlertController(title: nil, message: "要保存已有内容吗？", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .destructive, handler: {[weak self] _ in
+            self?.dismiss(animated: true, completion: nil)
+        }))
+        alert.addAction(UIAlertAction(title: "保存", style: .default, handler: {[weak self] _ in
+            self?.saveButtonTapped()
+        }))
+        
+        self.present(alert, animated: true)
     }
     
+    /// 保存按钮点击响应
     @objc private func saveButtonTapped() {
         // 获取数据
         let score = viewModel.starRate
@@ -286,8 +297,9 @@ extension DiaryEditViewController {
         DiaryStorageManager.shared.saveDiary(date: currentDate, score: score, content: content, images: images)
         
         // 提示成功并退出
-        let alert = UIAlertController(title: "成功", message: "日记已保存", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "好的", style: .default, handler: { [weak self] _ in
+        let alert = UIAlertController(title: nil, message: "日记已保存", preferredStyle: .alert)
+        // TODO: 能不能不要 title, 只显示提示框
+        alert.addAction(UIAlertAction(title: "好的", style: .cancel, handler: { [weak self] _ in
             self?.dismiss(animated: true, completion: nil)
         }))
         self.present(alert, animated: true)

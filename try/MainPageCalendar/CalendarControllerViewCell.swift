@@ -10,14 +10,14 @@ import SnapKit
 /// 日历视图的 cell
 class CalendarControllerViewCell: UICollectionViewCell {
     
-    static let reuseIdentifier = "calendarCell" // 修正拼写
+    static let reuseIdentifier = "calendarCell"
     
     // MARK: UI 控件
     let backgroundImageView: UIImageView = {
         let bgImageView = UIImageView()
         bgImageView.layer.cornerRadius = 10
         bgImageView.clipsToBounds = true
-        bgImageView.contentMode = .scaleAspectFit // 不同的填充方式
+        bgImageView.contentMode = .scaleAspectFill // 不同的填充方式
         return bgImageView
     }()
     
@@ -32,15 +32,15 @@ class CalendarControllerViewCell: UICollectionViewCell {
     
     let dateLabel: UILabel = {
         let dbl = UILabel()
-        dbl.textColor = .label
+        dbl.textColor = .white
         dbl.font = .systemFont(ofSize: 22, weight: .bold)
         return dbl
     }()
     
     let todayHighLightView: UIView = {
         let view = UIView()
-        view.backgroundColor = .yellow
-        view.layer.cornerRadius = Constant.collectionViewCellWidth/2
+        view.backgroundColor = .black
+        view.layer.cornerRadius = 22
 //        view.layer.borderWidth = 0.5
 //        view.layer.borderColor = UIColor.gray.cgColor
         view.isHidden = true
@@ -105,7 +105,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         }
         
         todayHighLightView.snp.makeConstraints { make in
-            make.height.width.equalTo(Constant.collectionViewCellWidth)
+            make.height.width.equalTo(44)
             make.center.equalToSuperview()
         }
         
@@ -114,23 +114,33 @@ class CalendarControllerViewCell: UICollectionViewCell {
             make.centerX.equalToSuperview()
             make.top.equalTo(dateLabel.snp.bottom).offset(2)
         }
-        
     }
-    
-    // MARK: public method
+}
+
+// MARK: public method
+extension CalendarControllerViewCell {
+    /// 设置 cell 对应的日期
     func configDate(with dateNum: Int) {
         dateLabel.text = String(dateNum)
     }
     
+    /// 显示灰色遮罩
     func showMaskImageView() {
         maskImageView.isHidden = false
     }
     
+    /// 当前日期显示高光
     func showTodayHighLight() {
         todayHighLightView.isHidden = false
     }
     
+    /// 显示日期下面的蓝色圆点
     func showDiaryIndicator(_ show: Bool) {
         diaryIndicatorView.isHidden = !show
+    }
+    
+    /// 显示背景图片
+    func showBackgroundImage(image: UIImage) {
+        backgroundImageView.image = image
     }
 }

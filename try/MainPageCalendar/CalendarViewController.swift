@@ -178,25 +178,25 @@ class CalendarViewController: UIViewController {
         test()
     }
     
+    // TODO: 为什么要加 deinit
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        print("CalendarCollectionView frame: \(CalendarCollectionView.frame)")
-        print("CalendarCollectionView superview: \(String(describing: CalendarCollectionView.superview))")
-        print("scrollView contentSize: \(scrollView.contentSize)") //(0.0, 0.0)
-        // 说明 contentSize 的大小为0，意思是直接通过最外层的 view 设置约束没有办法撑开 contentSize
-        print("scrollView frame: \(scrollView.frame)")
-        
-        // 加个红色边框看看位置
+//    override func viewDidAppear(_ animated: Bool) {
+//        super.viewDidAppear(animated)
+//
+//        print("CalendarCollectionView frame: \(CalendarCollectionView.frame)")
+//        print("CalendarCollectionView superview: \(String(describing: CalendarCollectionView.superview))")
+//        print("scrollView contentSize: \(scrollView.contentSize)") //(0.0, 0.0)
+//        // 说明 contentSize 的大小为0，意思是直接通过最外层的 view 设置约束没有办法撑开 contentSize
+//        print("scrollView frame: \(scrollView.frame)")
+//
+//        // 加个红色边框看看位置
 //        CalendarCollectionView.layer.borderColor = UIColor.red.cgColor
 //        CalendarCollectionView.layer.borderWidth = 2
-    }
-    
-       
+//    }
+           
     
     // MARK: private methods
     private func addView() {
@@ -337,7 +337,6 @@ extension CalendarViewController {
         let editDiaryVC = DiaryEditViewController()
         editDiaryVC.modalPresentationStyle = .fullScreen
         self.present(editDiaryVC, animated: true)
-        
     }
     
     @objc private func handleDiaryUpdate() {
@@ -346,9 +345,7 @@ extension CalendarViewController {
 }
 
 // MARK: UIScrollViewDelegate
-extension CalendarViewController: UIScrollViewDelegate {
-    
-}
+extension CalendarViewController: UIScrollViewDelegate { }
 
 // MARK: UICollectionViewDelegate
 extension CalendarViewController: UICollectionViewDelegate {
@@ -433,6 +430,14 @@ extension CalendarViewController: UICollectionViewDataSource {
                 } else if comparison == .orderedAscending {
                     // 今天之前的日期 (过去) -> 显示遮罩 (假设业务需求是过去不可用/已过期)
                     cell.showMaskImageView()
+                    
+                    // 尝试加载日记背景图
+                    if let diary = DiaryStorageManager.shared.getDiary(for: cellDate),
+                       let firstPath = diary.imagePaths.first,
+                       let image = DiaryStorageManager.shared.loadImage(named: firstPath) {
+                        cell.showBackgroundImage(image: image)
+                    }
+                    
                 } else {
                     // 今天之后的日期 (未来) -> 正常显示
                     // cell.showMaskImageView() // 如果未来不可用，则在这里显示 mask
