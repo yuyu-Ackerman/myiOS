@@ -9,23 +9,20 @@ import UIKit
 
 class DiaryEditViewModel {
     
-    // MARK: - Properties
-    
     /// 持有的 Model
     private var model: DiaryModel
     
     /// 当前编辑的图片 (Model 中只存路径，这里存实际图片对象)
     private var currentImages: [UIImage] = []
     
-    // MARK: - Initialization
+// MARK: - Initialization
     
     init() {
         // 默认初始化为当天的空日记
         self.model = DiaryModel(date: Date(), score: 0, content: "", imagePaths: [])
     }
     
-    // MARK: - Data Loading
-    
+// MARK: Public Methods
     /// 根据日期加载日记数据
     func loadData(for date: Date) {
         if let existingDiary = DiaryStorageManager.shared.getDiary(for: date) {
@@ -41,8 +38,20 @@ class DiaryEditViewModel {
         }
     }
     
-    // MARK: - Getters
-    
+    /// 保存日记到存储
+    func save() {
+        DiaryStorageManager.shared.saveDiary(
+            date: model.date,
+            score: model.score,
+            content: model.content,
+            images: currentImages
+        )
+    }
+}
+
+// MARK: Getters
+extension DiaryEditViewModel {
+   
     func getScore() -> Float {
         return model.score
     }
@@ -58,9 +67,10 @@ class DiaryEditViewModel {
     func getDate() -> Date {
         return model.date
     }
-    
-    // MARK: - Setters
-    
+}
+
+// MARK: Setters
+extension DiaryEditViewModel {
     func setScore(_ score: Float) {
         model.score = score
     }
@@ -71,17 +81,5 @@ class DiaryEditViewModel {
     
     func setImages(_ images: [UIImage]) {
         self.currentImages = images
-    }
-    
-    // MARK: - Actions
-    
-    /// 保存日记到存储
-    func save() {
-        DiaryStorageManager.shared.saveDiary(
-            date: model.date,
-            score: model.score,
-            content: model.content,
-            images: currentImages
-        )
     }
 }

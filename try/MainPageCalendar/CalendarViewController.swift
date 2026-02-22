@@ -16,6 +16,20 @@ import UIKit
 import SnapKit
 import Foundation
 
+
+extension String {
+    func getHeightByWidth(_ width: CGFloat, font: UIFont) -> CGFloat {
+        let size = CGSize(width: width, height: .greatestFiniteMagnitude)
+        let rect = self.boundingRect(
+            with: size,
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        )
+        return ceil(rect.height)
+    }
+}
+
 // TODO: 常量数据 constant
 struct Constant {
     /// 屏幕宽度
@@ -24,16 +38,14 @@ struct Constant {
     static let screenHeight = UIScreen.main.bounds.height
     /// 高度
     static let monthLabelHeight = 25
-    /// 集合视图单元格间距
-    static let spacingInCells = 0
     /// 组件之间的间距
-    static let componentSpacing = 0
+    static let componentSpacing = 10
     /// 集合视图单元格宽度
     static let collectionViewCellWidth = (screenWidth - edge * 2)/7
     /// 组件宽度
     static let componentWidth = screenWidth - edge * 2
-    /// 日历 cell 间的间隔（暂未使用）
-    static let spaceInCells = 1
+    /// 日历 cell 间的间隔
+    static let spaceInCells = 0
     /// 组件视图左右留白宽度
     static let edge = 16.0
     /// 星期排头高度
@@ -48,6 +60,8 @@ class CalendarViewController: UIViewController {
     private let weekTitle = ["一", "二", "三", "四", "五", "六", "日"]
     /// 一个日期 cell 的宽高
     private let sigalItemW = (UIScreen.main.bounds.width - Constant.edge * 2)/7
+    
+    private let viewModel = DiaryEditViewModel()
     
 //    Swift不允许在类的顶层直接执行赋值、方法调用等操作，只能放声明（属性、方法、协议、嵌套类型等）
 //    let now = Date()
@@ -137,8 +151,8 @@ class CalendarViewController: UIViewController {
     private lazy var CalendarCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.itemSize = CGSize(width: sigalItemW, height: sigalItemW)
-        layout.minimumLineSpacing = CGFloat(Constant.componentSpacing)
-        layout.minimumInteritemSpacing = CGFloat(Constant.componentSpacing)
+        layout.minimumLineSpacing = CGFloat(Constant.spaceInCells)
+        layout.minimumInteritemSpacing = CGFloat(Constant.spaceInCells)
 //        layout.sectionInset = UIEdgeInsets(top: 1, left: 1, bottom: 0, right: 0)
         
         // frame: .zero 表示初始化时大小为 0，因为后续会通过 SnapKit (makeConstraints) 来设置布局，所以初始 frame 不重要
@@ -158,9 +172,39 @@ class CalendarViewController: UIViewController {
         abtn.isUserInteractionEnabled = true
         let tap = UITapGestureRecognizer(target: self, action: #selector(addButtonTapped))
         abtn.addGestureRecognizer(tap)
+        
         return abtn
     }()
     
+    private lazy var starRateView: StarRateView = {
+        let srv = StarRateView(config: StarRateConfigration(
+            isPanable: false,
+            isEditable: false))
+        return srv
+    }()
+    
+    private lazy var textView: UITextView = {
+        let textView = UITextView()
+        textView.isEditable = false
+//        textView.text = "111111nihciuvhodcml;sm"
+        textView.layer.cornerRadius = 12
+        textView.showsVerticalScrollIndicator = false
+        textView.bounces = false
+        textView.layer.borderWidth = 1
+        textView.font = .systemFont(ofSize: 22)
+        textView.layer.borderColor = UIColor.lightGray.cgColor
+        textView.textContainerInset = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 10)
+        return textView
+    }()
+    
+    private let pictureContainerView = ImageDragGridView()
+    
+    private let dateLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.font = .systemFont(ofSize: 32, weight: .bold)
+        lbl.textColor = .label
+        return lbl
+    }()
     
     // MARK: initialize
     override func viewDidLoad() {
@@ -208,6 +252,10 @@ class CalendarViewController: UIViewController {
         scrollView.addSubview(weekTitleStackView) // 使用 StackView
         // 直接添加 collectionView
         scrollView.addSubview(CalendarCollectionView)
+        scrollView.addSubview(dateLabel)
+        scrollView.addSubview(starRateView)
+        scrollView.addSubview(textView)
+        scrollView.addSubview(pictureContainerView)
     }
     
     /// 更新日历 UI：标题和列表
@@ -268,6 +316,33 @@ class CalendarViewController: UIViewController {
             make.height.equalTo(sigalItemW * 6)
             make.centerX.equalToSuperview()
         }
+        
+        dateLabel.snp.makeConstraints { make in
+            make.top.equalTo(CalendarCollectionView.snp.bottom).offset(Constant.componentSpacing)
+            make.left.equalToSuperview().inset(16)
+        }
+        
+        starRateView.snp.makeConstraints { make in
+            make.left.equalToSuperview().inset(16)
+            make.width.equalTo(200)
+            make.height.equalTo(32)
+            
+            make.top.equalTo(dateLabel.snp.bottom).offset(Constant.componentSpacing)
+        }
+        
+        textView.snp.makeConstraints { make in
+            make.width.equalTo(Constant.componentWidth)
+            make.top.equalTo(starRateView.snp.bottom).offset(Constant.componentSpacing)
+            make.centerX.equalToSuperview()
+        }
+        
+        pictureContainerView.snp.makeConstraints { make in
+            make.width.equalTo(Constant.componentWidth)
+            make.height.equalTo(200)
+            make.top.equalTo(textView.snp.bottom).offset(Constant.componentSpacing)
+            make.centerX.equalToSuperview()
+            make.bottom.equalToSuperview().inset(10) //
+        }
     }
     
     /// 设置星期排头的文字
@@ -279,6 +354,27 @@ class CalendarViewController: UIViewController {
             label.textAlignment = .center
             label.font = .systemFont(ofSize: 22, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
+        }
+    }
+    
+    /// 获取日记信息
+    private func loadData(date: Date) {
+        viewModel.loadData(for: date)
+        self.starRateView.setScore(viewModel.getScore())
+        
+        let text = viewModel.getContent()
+        self.textView.text = text
+        if text.isEmpty {
+            textView.isHidden = true
+        } else {
+            textView.isHidden = false
+            let height = self.textView.text.getHeightByWidth(Constant.componentWidth - 32, font: .systemFont(ofSize: 22)) // 为什么是减32, 不应该是两个内边距的距离22吗
+            textView.snp.remakeConstraints { make in
+                make.height.equalTo(height + 22)
+                make.width.equalTo(Constant.componentWidth)
+                make.top.equalTo(starRateView.snp.bottom).offset(Constant.componentSpacing)
+                make.centerX.equalToSuperview()
+            }
         }
     }
     
@@ -334,9 +430,16 @@ extension CalendarViewController {
     }
     
     @objc private func addButtonTapped() {
-        let editDiaryVC = DiaryEditViewController()
-        editDiaryVC.modalPresentationStyle = .fullScreen
-        self.present(editDiaryVC, animated: true)
+        var dateComponents = calendar.dateComponents([.year, .month], from: changedDate)
+        dateComponents.day = addButtonImageView.tag
+
+        if let cellDate = calendar.date(from: dateComponents) {
+            // Open Diary Edit
+            let editDiaryVC = DiaryEditViewController()
+            editDiaryVC.currentDate = cellDate
+            editDiaryVC.modalPresentationStyle = .fullScreen
+            self.present(editDiaryVC, animated: true)
+        }
     }
     
     @objc private func handleDiaryUpdate() {
@@ -368,9 +471,14 @@ extension CalendarViewController: UICollectionViewDelegate {
                 let editDiaryVC = DiaryEditViewController()
                 editDiaryVC.currentDate = cellDate
                 editDiaryVC.modalPresentationStyle = .fullScreen
-                self.present(editDiaryVC, animated: true)
+                //self.present(editDiaryVC, animated: true)
+                self.addButtonImageView.tag = day
+                guard let year = dateComponents.year, let month = dateComponents.month, let day = dateComponents.day else { return }
+                self.dateLabel.text = "\(year).\(month).\(day)"
+                loadData(date: cellDate)
             }
         }
+        
     }
 }
 
