@@ -59,7 +59,7 @@ class DiaryEditViewController: UIViewController {
         // 接收评分回调并打印
         srv.starScoreClousure = {[weak self] score in  // [weak self] 避免强引用
             print("当前评分：\(score)")
-            self?.viewModel.starRate = score //
+            self?.viewModel.setScore(score)
         }
         return srv
     }()
@@ -114,7 +114,7 @@ class DiaryEditViewController: UIViewController {
             // 如果视图已经加载，更新标题
             if isViewLoaded {
                 updateTitle()
-                // 清除旧数据重新加载？通常只会设置一次
+                loadDiaryData()
             }
         }
     }
@@ -143,33 +143,35 @@ class DiaryEditViewController: UIViewController {
     
     /// 加载对应日期的日记信息
     private func loadDiaryData() {
-        if let diary = DiaryStorageManager.shared.getDiary(for: currentDate) {
-            // Populate ViewModel
-            viewModel.starRate = diary.score
-            viewModel.description = diary.content
-            
-            // Update UI
-            // 延迟一点设置评分，确保视图布局完成（虽然 snapkit 应该能处理）
-            DispatchQueue.main.async {
-                self.starRateView.setScore(diary.score)
-            }
-            
-            if !diary.content.isEmpty {
-                textEditView.text = diary.content
-                textEditView.textColor = .label
-                isPlaceholderActive = false
-            }
-            
-            // Load images
-            var images: [UIImage] = []
-            for path in diary.imagePaths {
-                if let image = DiaryStorageManager.shared.loadImage(named: path) {
-                    images.append(image)
-                }
-            }
-            if !images.isEmpty {
-                pictureContainerView.addImages(images, animated: false)
-            }
+        // 1. 让 ViewModel 加载数据
+        viewModel.loadData(for: currentDate)
+        
+        // 2. 从 ViewModel 获取数据更新 UI
+        
+        // 评分
+        let score = viewModel.getScore()
+        DispatchQueue.main.async {
+            self.starRateView.setScore(score)
+        }
+        
+        // 内容
+        let content = viewModel.getContent()
+        if !content.isEmpty {
+            textEditView.text = content
+            textEditView.textColor = .label
+            isPlaceholderActive = false
+        } else {
+            // 重置为占位符
+            textEditView.text = "说点什么吧..."
+            textEditView.textColor = .gray
+            isPlaceholderActive = true
+        }
+        
+        // 图片
+        let images = viewModel.getImages()
+        pictureContainerView.removeAllImages(animated: false)
+        if !images.isEmpty {
+            pictureContainerView.addImages(images, animated: false)
         }
     }
     
@@ -267,7 +269,7 @@ extension DiaryEditViewController: UITextViewDelegate {
     }
     
     func textViewDidChange(_ textView: UITextView) {
-        viewModel.description = textView.text
+        viewModel.setContent(textView.text)
     }
 }
 
@@ -288,13 +290,12 @@ extension DiaryEditViewController {
     
     /// 保存按钮点击响应
     @objc private func saveButtonTapped() {
-        // 获取数据
-        let score = viewModel.starRate
-        let content = viewModel.description
+        // 更新 ViewModel 中的图片数据
         let images = pictureContainerView.getAllImages()
+        viewModel.setImages(images)
         
-        // 保存
-        DiaryStorageManager.shared.saveDiary(date: currentDate, score: score, content: content, images: images)
+        // 调用 ViewModel 保存
+        viewModel.save()
         
         // 提示成功并退出
         let alert = UIAlertController(title: nil, message: "日记已保存", preferredStyle: .alert)

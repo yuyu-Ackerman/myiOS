@@ -8,26 +8,80 @@
 import UIKit
 
 class DiaryEditViewModel {
+    
     // MARK: - Properties
     
-    /// 评分 (0-5)
-    var starRate: Float = 0
+    /// 持有的 Model
+    private var model: DiaryModel
     
-    /// 日记内容
-    var description: String = ""
-    
-    /// 图片列表 (用于暂存编辑时的图片)
-    var pictures: [UIImage] = []
+    /// 当前编辑的图片 (Model 中只存路径，这里存实际图片对象)
+    private var currentImages: [UIImage] = []
     
     // MARK: - Initialization
     
-    init() {}
+    init() {
+        // 默认初始化为当天的空日记
+        self.model = DiaryModel(date: Date(), score: 0, content: "", imagePaths: [])
+    }
     
-    // MARK: - Helper Methods
+    // MARK: - Data Loading
     
-    func reset() {
-        starRate = 0
-        description = ""
-        pictures = []
+    /// 根据日期加载日记数据
+    func loadData(for date: Date) {
+        if let existingDiary = DiaryStorageManager.shared.getDiary(for: date) {
+            self.model = existingDiary
+            // 加载图片
+            self.currentImages = existingDiary.imagePaths.compactMap {
+                DiaryStorageManager.shared.loadImage(named: $0)
+            }
+        } else {
+            // 如果当天没有日记，创建一个新的空白 Model
+            self.model = DiaryModel(date: date, score: 0, content: "", imagePaths: [])
+            self.currentImages = []
+        }
+    }
+    
+    // MARK: - Getters
+    
+    func getScore() -> Float {
+        return model.score
+    }
+    
+    func getContent() -> String {
+        return model.content
+    }
+    
+    func getImages() -> [UIImage] {
+        return currentImages
+    }
+    
+    func getDate() -> Date {
+        return model.date
+    }
+    
+    // MARK: - Setters
+    
+    func setScore(_ score: Float) {
+        model.score = score
+    }
+    
+    func setContent(_ content: String) {
+        model.content = content
+    }
+    
+    func setImages(_ images: [UIImage]) {
+        self.currentImages = images
+    }
+    
+    // MARK: - Actions
+    
+    /// 保存日记到存储
+    func save() {
+        DiaryStorageManager.shared.saveDiary(
+            date: model.date,
+            score: model.score,
+            content: model.content,
+            images: currentImages
+        )
     }
 }

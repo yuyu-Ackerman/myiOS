@@ -37,7 +37,7 @@ class DiaryStorageManager {
         }
         
         // 2. 创建新的 Entry
-        let newEntry = DiaryEntry(date: date, score: score, content: content, imagePaths: savedImagePaths)
+        let newEntry = DiaryModel(date: date, score: score, content: content, imagePaths: savedImagePaths)
         
         // 3. 读取现有日记并更新
         var diaries = getAllDiaries()
@@ -61,14 +61,14 @@ class DiaryStorageManager {
     }
     
     // 获取所有日记
-    func getAllDiaries() -> [DiaryEntry] {
+    func getAllDiaries() -> [DiaryModel] {
         guard let data = try? Data(contentsOf: dataFilePath) else { return [] }
-        guard let diaries = try? JSONDecoder().decode([DiaryEntry].self, from: data) else { return [] }
+        guard let diaries = try? JSONDecoder().decode([DiaryModel].self, from: data) else { return [] }
         return diaries
     }
     
     // 获取特定日期的日记
-    func getDiary(for date: Date) -> DiaryEntry? {
+    func getDiary(for date: Date) -> DiaryModel? {
         let diaries = getAllDiaries()
         return diaries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
     }

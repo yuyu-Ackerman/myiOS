@@ -8,7 +8,7 @@
 import UIKit
 import Foundation
 
-struct DiaryEntry: Codable {
+struct DiaryModel: Codable {
     var id: String
     var date: Date
     var score: Float // 评分是 Float

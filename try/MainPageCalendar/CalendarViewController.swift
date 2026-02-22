@@ -428,7 +428,7 @@ extension CalendarViewController: UICollectionViewDataSource {
                     // 是今天
                     cell.showTodayHighLight()
                 } else if comparison == .orderedAscending {
-                    // 今天之前的日期 (过去) -> 显示遮罩 (假设业务需求是过去不可用/已过期)
+                    // 今天之前的日期 (过去) -> 显示遮罩 
                     cell.showMaskImageView()
                     
                     // 尝试加载日记背景图
@@ -445,7 +445,7 @@ extension CalendarViewController: UICollectionViewDataSource {
                 
                 // 检查是否有日记
                 let dateString = dateFormatter.string(from: cellDate)
-                cell.showDiaryIndicator(diaryDates.contains(dateString))
+                //cell.showDiaryIndicator(diaryDates.contains(dateString))
             }
         } else {
             cell.isHidden = true
