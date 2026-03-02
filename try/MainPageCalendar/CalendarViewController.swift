@@ -30,6 +30,13 @@ extension String {
     }
 }
 
+enum DiaryShouldShow {
+    case none
+    case rate
+    case description
+    case images
+}
+
 // TODO: 常量数据 constant
 struct Constant {
     /// 屏幕宽度
@@ -52,6 +59,8 @@ struct Constant {
     static let weekTitleViewHeight = 40
     /// cell 格子数
     static let datenum = 42
+    /// 图片间的距离
+    static let spacingInPictures = 3.0
 }
 
 /// 首页日历视图
@@ -168,6 +177,8 @@ class CalendarViewController: UIViewController {
     private lazy var addButtonImageView: UIImageView = {
         let abtn = UIImageView()
         abtn.contentMode = .scaleAspectFill
+        abtn.backgroundColor = .white
+        abtn.layer.cornerRadius = 40
         abtn.image = UIImage(named: "add_button")
         abtn.isUserInteractionEnabled = true
         let tap = UITapGestureRecognizer(target: self, action: #selector(addButtonTapped))
@@ -197,11 +208,11 @@ class CalendarViewController: UIViewController {
         return textView
     }()
     
-    private let pictureContainerView = ImageDragGridView()
+    private let pictureContainerView = UIView()
     
     private let dateLabel: UILabel = {
         let lbl = UILabel()
-        lbl.font = .systemFont(ofSize: 32, weight: .bold)
+        lbl.font = .systemFont(ofSize: 25, weight: .bold)
         lbl.textColor = .label
         return lbl
     }()
@@ -209,17 +220,20 @@ class CalendarViewController: UIViewController {
     // MARK: initialize
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = .systemBackground
-        //self.overrideUserInterfaceStyle = .unspecified
-        addView()
-        makeConstraints()
+        view.backgroundColor = .systemBackground
+        
+        setupViews()
+        setupConstraints()
         setWeekTitle()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleDiaryUpdate), name: NSNotification.Name("DiaryUpdated"), object: nil)
-        fetchDiaryDates()
         
-        updateCalendarUI()
-        test()
+        // 注册日记更新通知
+        NotificationCenter.default.addObserver(self, selector: #selector(handleDiaryUpdate), name: .diaryUpdated, object: nil)
+        
+   //     updateCalendarUI()
+        
+        // 初始加载日记数据
+        fetchDiaryDates()
     }
     
     // TODO: 为什么要加 deinit
@@ -243,7 +257,7 @@ class CalendarViewController: UIViewController {
            
     
     // MARK: private methods
-    private func addView() {
+    private func setupViews() {
         view.addSubview(scrollView)
         view.addSubview(monthLabel)
         view.addSubview(leftArrowImageView)
@@ -267,9 +281,12 @@ class CalendarViewController: UIViewController {
         
         // 2. 刷新 CollectionView
         CalendarCollectionView.reloadData()
+        // TODO: load data 之前应该清除缓存
+        DiaryStorageManager.shared.clearBuffer(date: changedDate)
+        loadData(date: changedDate) // 为什么 now 不行
     }
     
-    private func makeConstraints() {
+    private func setupConstraints() {
         monthLabel.snp.makeConstraints { make in
 //            make.top.equalToSuperview().inset(50)
             make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(10) // 约束在顶部安全区下
@@ -338,7 +355,7 @@ class CalendarViewController: UIViewController {
         
         pictureContainerView.snp.makeConstraints { make in
             make.width.equalTo(Constant.componentWidth)
-            make.height.equalTo(200)
+            make.height.equalTo(0)
             make.top.equalTo(textView.snp.bottom).offset(Constant.componentSpacing)
             make.centerX.equalToSuperview()
             make.bottom.equalToSuperview().inset(10) //
@@ -350,7 +367,7 @@ class CalendarViewController: UIViewController {
         for title in weekTitle {
             let label = UILabel()
             label.text = title
-            label.textColor = .label
+            label.textColor = .black
             label.textAlignment = .center
             label.font = .systemFont(ofSize: 22, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
@@ -360,9 +377,20 @@ class CalendarViewController: UIViewController {
     /// 获取日记信息
     private func loadData(date: Date) {
         viewModel.loadData(for: date)
-        self.starRateView.setScore(viewModel.getScore())
-        
+        let score = viewModel.getScore()
         let text = viewModel.getContent()
+        let images = viewModel.getImages()
+        
+        if text.isEmpty, images.isEmpty {
+            hideDiary()
+            return
+        }
+        self.starRateView.isHidden = false //
+        self.dateLabel.isHidden = false //
+        let day = calendar.component(.day, from: date)
+        self.dateLabel.text = "About Day\(day):"
+        self.starRateView.setScore(score)
+                
         self.textView.text = text
         if text.isEmpty {
             textView.isHidden = true
@@ -374,6 +402,59 @@ class CalendarViewController: UIViewController {
                 make.width.equalTo(Constant.componentWidth)
                 make.top.equalTo(starRateView.snp.bottom).offset(Constant.componentSpacing)
                 make.centerX.equalToSuperview()
+            }
+        }
+        
+        setPictures(images: images)
+    }
+    
+    private func hideDiary() {
+        self.dateLabel.isHidden = true
+        self.starRateView.isHidden = true
+        self.textView.isHidden = true
+        self.pictureContainerView.isHidden = true
+    }
+    
+    private func setPictures(images: [UIImage]) {
+        // 清除旧的图片视图
+        pictureContainerView.subviews.forEach { $0.removeFromSuperview() }
+        // 原因是在刷新日记详情区域的图片时， CalendarViewController 没有清除旧的图片视图，直接在上面添加了新的图片视图，导致了重叠
+        
+        guard !images.isEmpty, images.count <= 9 else {
+            self.pictureContainerView.isHidden = true
+            return
+        }
+        self.pictureContainerView.isHidden = false
+        for image in images {
+            guard let index = images.firstIndex(of: image) else { return}
+            let line = index % 3
+            let col = index / 3
+            let size = (Constant.componentWidth - Constant.spacingInPictures * 2) / 3
+            
+            let Yoffset = size * CGFloat(col) + Constant.spacingInPictures * CGFloat(col)
+            
+            let Xoffset = size * CGFloat(line) + Constant.spacingInPictures * CGFloat(line)
+            
+            let height = size * CGFloat(col + 1) + Constant.spacingInPictures * CGFloat(col)
+            
+            let imageView = UIImageView()
+            imageView.image = image
+            imageView.layer.cornerRadius = 12
+            imageView.clipsToBounds = true
+            pictureContainerView.addSubview(imageView)
+            
+            imageView.snp.makeConstraints { make in
+                make.width.height.equalTo(size)
+                make.top.equalToSuperview().inset(Yoffset)
+                make.left.equalToSuperview().inset(Xoffset)
+            }
+            
+            pictureContainerView.snp.remakeConstraints{ make in
+                make.width.equalTo(Constant.componentWidth)
+                make.height.equalTo(height)
+                make.top.equalTo(textView.snp.bottom).offset(Constant.componentSpacing)
+                make.centerX.equalToSuperview()
+                make.bottom.equalToSuperview().inset(10)
             }
         }
     }
@@ -402,9 +483,15 @@ class CalendarViewController: UIViewController {
     }
     
     private func fetchDiaryDates() {
+        
+        let year = calendar.component(.year, from: changedDate)
+        let month = calendar.component(.month, from: changedDate)
+        monthLabel.text = "\(year).\(month)"
+        
         let diaries = DiaryStorageManager.shared.getAllDiaries()
         diaryDates = Set(diaries.map { dateFormatter.string(from: $0.date) })
         CalendarCollectionView.reloadData()
+        loadData(date: changedDate)
     }
     
 }
@@ -473,12 +560,11 @@ extension CalendarViewController: UICollectionViewDelegate {
                 editDiaryVC.modalPresentationStyle = .fullScreen
                 //self.present(editDiaryVC, animated: true)
                 self.addButtonImageView.tag = day
-                guard let year = dateComponents.year, let month = dateComponents.month, let day = dateComponents.day else { return }
-                self.dateLabel.text = "\(year).\(month).\(day)"
+                // guard let day = dateComponents.day else { return }
+                
                 loadData(date: cellDate)
             }
         }
-        
     }
 }
 
@@ -535,6 +621,7 @@ extension CalendarViewController: UICollectionViewDataSource {
                 if comparison == .orderedSame {
                     // 是今天
                     cell.showTodayHighLight()
+                    self.addButtonImageView.tag = day
                 } else if comparison == .orderedAscending {
                     // 今天之前的日期 (过去) -> 显示遮罩 
                     cell.showMaskImageView()

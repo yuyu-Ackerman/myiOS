@@ -24,22 +24,22 @@ class CalendarControllerViewCell: UICollectionViewCell {
     // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
     let maskImageView: UIView = {
     let mv = UIView()
-        mv.backgroundColor = .black
-        mv.alpha = 0.3
+        mv.backgroundColor = .white
+        mv.alpha = 0.4
         mv.isHidden = true
         return mv
     }()
     
     let dateLabel: UILabel = {
         let dbl = UILabel()
-        dbl.textColor = .white
+        dbl.textColor = .label
         dbl.font = .systemFont(ofSize: 22, weight: .bold)
         return dbl
     }()
     
     let todayHighLightView: UIView = {
         let view = UIView()
-        view.backgroundColor = .black
+        view.backgroundColor = .systemBlue
         view.layer.cornerRadius = 22
 //        view.layer.borderWidth = 0.5
 //        view.layer.borderColor = UIColor.gray.cgColor

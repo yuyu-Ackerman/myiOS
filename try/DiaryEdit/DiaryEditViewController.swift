@@ -304,5 +304,7 @@ extension DiaryEditViewController {
             self?.dismiss(animated: true, completion: nil)
         }))
         self.present(alert, animated: true)
+        
+        // TODO: 更新首页日记显示
     }
 }

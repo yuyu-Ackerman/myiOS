@@ -61,6 +61,7 @@ extension DiaryEditViewModel {
     }
     
     func getImages() -> [UIImage] {
+        print("图片的数量：\(currentImages.count)")
         return currentImages
     }
     

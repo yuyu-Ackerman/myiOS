@@ -1,6 +1,10 @@
 import Foundation
 import UIKit
 
+extension Notification.Name {
+    static let diaryUpdated = Notification.Name("DiaryUpdated")
+}
+
 // 日记模型
 
 
@@ -20,10 +24,22 @@ class DiaryStorageManager {
         return documentsDirectory.appendingPathComponent("diaries.json")
     }
     
+    func clearBuffer(date: Date) {
+        if let oldDiary = getDiary(for: date) {
+            for path in oldDiary.imagePaths {
+                let fullPath = documentsDirectory.appendingPathComponent(path)
+                try? FileManager.default.removeItem(at: fullPath)
+            }
+        }
+    }
+    
     /// 保存日记
     // images: 包含 UIImage 对象的数组
     func saveDiary(date: Date, score: Float, content: String, images: [UIImage]) {
-        // 1. 保存图片到磁盘
+        // 0. 清理该日期旧数据的图片文件，防止产生未引用的孤儿文件
+        clearBuffer(date: date)
+        
+        // 1. 保存新图片到磁盘
         var savedImagePaths: [String] = []
         for image in images {
             let imageName = UUID().uuidString + ".jpg"
@@ -45,6 +61,7 @@ class DiaryStorageManager {
         // 移除同一天的旧日记 (假设每天只能有一篇日记)
         diaries.removeAll { Calendar.current.isDate($0.date, inSameDayAs: date) }
         
+        // 添加新日记
         diaries.append(newEntry)
         
         // 4. 写入文件
@@ -56,8 +73,7 @@ class DiaryStorageManager {
         }
         
         // 发送通知，告知数据更新
-        // TODO: 这个是什么东西、具体怎么使用？与协议和闭包回调有什么区别，什么情况下该用这个？
-        NotificationCenter.default.post(name: NSNotification.Name("DiaryUpdated"), object: nil)
+        NotificationCenter.default.post(name: .diaryUpdated, object: nil)
     }
     
     // 获取所有日记
@@ -100,7 +116,7 @@ class DiaryStorageManager {
                 try? data.write(to: dataFilePath)
             }
             
-            NotificationCenter.default.post(name: NSNotification.Name("DiaryUpdated"), object: nil)
+            NotificationCenter.default.post(name: .diaryUpdated, object: nil)
         }
     }
 }
