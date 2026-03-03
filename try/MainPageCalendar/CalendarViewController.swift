@@ -83,6 +83,7 @@ class CalendarViewController: UIViewController {
     
     var now = Date()
     var changedDate = Date()
+    private var selectedDate: Date = Date()
     
     let calendar: Calendar = {
         var cal = Calendar.current
@@ -362,6 +363,8 @@ class CalendarViewController: UIViewController {
         }
     }
     
+
+    
     /// 设置星期排头的文字
     private func setWeekTitle() {
         for title in weekTitle {
@@ -517,16 +520,11 @@ extension CalendarViewController {
     }
     
     @objc private func addButtonTapped() {
-        var dateComponents = calendar.dateComponents([.year, .month], from: changedDate)
-        dateComponents.day = addButtonImageView.tag
-
-        if let cellDate = calendar.date(from: dateComponents) {
-            // Open Diary Edit
-            let editDiaryVC = DiaryEditViewController()
-            editDiaryVC.currentDate = cellDate
-            editDiaryVC.modalPresentationStyle = .fullScreen
-            self.present(editDiaryVC, animated: true)
-        }
+        // Open Diary Edit
+        let editDiaryVC = DiaryEditViewController()
+        editDiaryVC.currentDate = selectedDate
+        editDiaryVC.modalPresentationStyle = .fullScreen
+        self.present(editDiaryVC, animated: true)
     }
     
     @objc private func handleDiaryUpdate() {
@@ -554,16 +552,17 @@ extension CalendarViewController: UICollectionViewDelegate {
             dateComponents.day = day
             
             if let cellDate = calendar.date(from: dateComponents) {
-                // Open Diary Edit
-                let editDiaryVC = DiaryEditViewController()
-                editDiaryVC.currentDate = cellDate
-                editDiaryVC.modalPresentationStyle = .fullScreen
-                //self.present(editDiaryVC, animated: true)
-                self.addButtonImageView.tag = day
-                // guard let day = dateComponents.day else { return }
+                // 更新选中日期并刷新 UI
+                selectedDate = cellDate
+                collectionView.reloadData()
+                
                 
                 loadData(date: cellDate)
             }
+            
+            self.addButtonImageView.tag = day
+            
+            
         }
     }
 }
@@ -617,12 +616,18 @@ extension CalendarViewController: UICollectionViewDataSource {
                 // 比较 cell 日期和今天 (now)
                 // 使用 compare(_:to:toGranularity:) 忽略时分秒差异，只比较日期
                 let comparison = calendar.compare(cellDate, to: now, toGranularity: .day)
+                let isSelected = calendar.isDate(cellDate, inSameDayAs: selectedDate)
                 
-                if comparison == .orderedSame {
+                if isSelected {
+                    cell.showSelectedHighLight(true)
+                } else if comparison == .orderedSame {
                     // 是今天
                     cell.showTodayHighLight()
-                    self.addButtonImageView.tag = day
-                } else if comparison == .orderedAscending {
+                } else {
+                    cell.showSelectedHighLight(false)
+                }
+                
+                if comparison == .orderedAscending {
                     // 今天之前的日期 (过去) -> 显示遮罩 
                     cell.showMaskImageView()
                     
@@ -632,10 +637,6 @@ extension CalendarViewController: UICollectionViewDataSource {
                        let image = DiaryStorageManager.shared.loadImage(named: firstPath) {
                         cell.showBackgroundImage(image: image)
                     }
-                    
-                } else {
-                    // 今天之后的日期 (未来) -> 正常显示
-                    // cell.showMaskImageView() // 如果未来不可用，则在这里显示 mask
                 }
                 
                 // 检查是否有日记

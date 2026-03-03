@@ -39,7 +39,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
     
     let todayHighLightView: UIView = {
         let view = UIView()
-        view.backgroundColor = .systemBlue
+        view.backgroundColor = .clear
         view.layer.cornerRadius = 22
 //        view.layer.borderWidth = 0.5
 //        view.layer.borderColor = UIColor.gray.cgColor
@@ -90,6 +90,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         contentView.addSubview(maskImageView)
         contentView.addSubview(todayHighLightView)
         contentView.addSubview(dateLabel)
+        contentView.insertSubview(dateLabel, aboveSubview: todayHighLightView)
         contentView.addSubview(diaryIndicatorView)
         
         backgroundImageView.snp.makeConstraints { make in
@@ -131,7 +132,13 @@ extension CalendarControllerViewCell {
     
     /// 当前日期显示高光
     func showTodayHighLight() {
+        todayHighLightView.backgroundColor = .blue
         todayHighLightView.isHidden = false
+    }
+    
+    func showSelectedHighLight(_ show: Bool) {
+        todayHighLightView.backgroundColor = .yellow
+        todayHighLightView.isHidden = !show
     }
     
     /// 显示日期下面的蓝色圆点

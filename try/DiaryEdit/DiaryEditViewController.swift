@@ -124,12 +124,30 @@ class DiaryEditViewController: UIViewController {
         self.view.backgroundColor = .systemBackground
         addView()
         setConstraints()
+        setupTapGesture()
         
         updateTitle()
         loadDiaryData()
     }
     
     //MARK: Private Methods
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func handleTapGesture(_ gesture: UITapGestureRecognizer) {
+        let tapLocation = gesture.location(in: view)
+        let convertedLocation = view.convert(tapLocation, to: textEditView)
+        let isInsideTextView = textEditView.bounds.contains(convertedLocation)
+        
+        if !isInsideTextView && textEditView.isFirstResponder {
+            textEditView.resignFirstResponder()
+        }
+    }
+    
     /// 更新编辑界面标题
     private func updateTitle() {
         if Calendar.current.isDateInToday(currentDate) {
