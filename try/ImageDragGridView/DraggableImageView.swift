@@ -60,7 +60,7 @@ class DraggableImageView: UIImageView {
     /// 删除按钮
     private lazy var deleteButton: UIButton = {
         let button = UIButton(type: .custom)
-        button.setImage(UIImage(named: "publishImage_deleteIcon"), for: .normal)
+        button.setImage(UIImage(named: "picture_delete"), for: .normal)
         
         // 添加点击事件
         button.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)

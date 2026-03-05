@@ -27,7 +27,7 @@ struct ImageDragGridConstants {
         static let spacing: CGFloat = 3
         
         /// 容器视图边距
-        static let containerMargin: CGFloat = 16
+        static let containerMargin: CGFloat = 0
         
         /// 容器视图顶部偏移
         static let containerTopOffset: CGFloat = 50

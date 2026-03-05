@@ -85,7 +85,7 @@ public class ImageDragGridView: UIView {
       pointSize: configuration.addButtonIconSize,
       weight: .medium
     )
-    button.setImage(UIImage(named: "publishImage_addImages"), for: .normal)
+    button.setImage(UIImage(named: "picture_add"), for: .normal)
     button.addTarget(self, action: #selector(addButtonTapped), for: .touchUpInside)
     
     return button

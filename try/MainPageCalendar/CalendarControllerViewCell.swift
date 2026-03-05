@@ -39,7 +39,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
     
     let todayHighLightView: UIView = {
         let view = UIView()
-        view.backgroundColor = .clear
+        view.backgroundColor = .black
         view.layer.cornerRadius = 22
 //        view.layer.borderWidth = 0.5
 //        view.layer.borderColor = UIColor.gray.cgColor
@@ -52,6 +52,13 @@ class CalendarControllerViewCell: UICollectionViewCell {
         let view = UIView()
         view.backgroundColor = .systemBlue
         view.layer.cornerRadius = 3
+        view.isHidden = true
+        return view
+    }()
+    
+    private lazy var selectMarkView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black
         view.isHidden = true
         return view
     }()
@@ -70,9 +77,11 @@ class CalendarControllerViewCell: UICollectionViewCell {
         dateLabel.text = nil
        // todayHighLightView.backgroundColor = nil
         todayHighLightView.isHidden = true
+        dateLabel.textColor = .black
         // 我为当前日期添加高光时，一开始没有重写该方法，导致复用时出现错误：我向前/向后切换月份时，出现了很多日期同时被高光的情况，在添加该方法和 todayHighLightView.isHidden = true 这一句后多高光问题解决
         // 所以！复用前一定要重置状态！
         diaryIndicatorView.isHidden = true
+        selectMarkView.isHidden = true
         
     }
     
@@ -92,6 +101,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         contentView.addSubview(dateLabel)
         contentView.insertSubview(dateLabel, aboveSubview: todayHighLightView)
         contentView.addSubview(diaryIndicatorView)
+        contentView.addSubview(selectMarkView)
         
         backgroundImageView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -115,6 +125,13 @@ class CalendarControllerViewCell: UICollectionViewCell {
             make.centerX.equalToSuperview()
             make.top.equalTo(dateLabel.snp.bottom).offset(2)
         }
+        
+        selectMarkView.snp.makeConstraints { make in
+            make.height.equalTo(5)
+            make.width.equalTo(20)
+            make.centerX.equalToSuperview()
+            make.top.equalTo(dateLabel.snp.bottom).offset(2)
+        }
     }
 }
 
@@ -131,19 +148,23 @@ extension CalendarControllerViewCell {
     }
     
     /// 当前日期显示高光
-    func showTodayHighLight() {
-        todayHighLightView.backgroundColor = .blue
-        todayHighLightView.isHidden = false
-    }
-    
-    func showSelectedHighLight(_ show: Bool) {
-        todayHighLightView.backgroundColor = .yellow
+    func showTodayHighLight(_ show: Bool) {
+        dateLabel.textColor = .white
         todayHighLightView.isHidden = !show
     }
+    
+//    func showSelectedHighLight(_ show: Bool) {
+//        todayHighLightView.backgroundColor = .yellow
+//        todayHighLightView.isHidden = !show
+//    }
     
     /// 显示日期下面的蓝色圆点
     func showDiaryIndicator(_ show: Bool) {
         diaryIndicatorView.isHidden = !show
+    }
+    
+    func showSelectMarkView(_ show: Bool) {
+        selectMarkView.isHidden = !show
     }
     
     /// 显示背景图片

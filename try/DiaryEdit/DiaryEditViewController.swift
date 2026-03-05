@@ -82,6 +82,7 @@ class DiaryEditViewController: UIViewController {
         textView.layer.borderWidth = 1
         textView.layer.borderColor = UIColor.lightGray.cgColor
         textView.textContainerInset = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 11)
+        textView.isScrollEnabled = false
         textView.delegate = self
         textView.attributedText = attr
         return textView
@@ -272,6 +273,7 @@ class DiaryEditViewController: UIViewController {
             make.width.equalToSuperview()
             make.top.equalTo(addPictureLabel.snp.bottom).offset(12)
             make.height.equalTo(200)
+            make.bottom.equalToSuperview().inset(20)
         }
     }
 }
@@ -288,6 +290,16 @@ extension DiaryEditViewController: UITextViewDelegate {
     
     func textViewDidChange(_ textView: UITextView) {
         viewModel.setContent(textView.text)
+        textView.isHidden = false
+        let height = textView.text.getHeightByWidth(Constant.componentWidth - 32, font: .systemFont(ofSize: 16)) // 为什么是减32, 不应该是两个内边距的距离22吗
+        if height > 180 {
+            textView.snp.remakeConstraints { make in
+                make.height.equalTo(height + 22)
+                make.left.equalToSuperview()
+                make.top.equalTo(textTitleLabel.snp.bottom).offset(12)
+                make.width.equalToSuperview()
+            }
+        }
     }
 }
 

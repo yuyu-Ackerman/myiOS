@@ -84,6 +84,7 @@ class CalendarViewController: UIViewController {
     var now = Date()
     var changedDate = Date()
     private var selectedDate: Date = Date()
+    var rowCount: CGFloat = 0 // 不能放在 dataSourse 中定义，因为每一次都会重新定义 rowCount 刷新。。导致不管多少次结果都是0
     
     let calendar: Calendar = {
         var cal = Calendar.current
@@ -364,7 +365,6 @@ class CalendarViewController: UIViewController {
     }
     
 
-    
     /// 设置星期排头的文字
     private func setWeekTitle() {
         for title in weekTitle {
@@ -441,6 +441,7 @@ class CalendarViewController: UIViewController {
             let height = size * CGFloat(col + 1) + Constant.spacingInPictures * CGFloat(col)
             
             let imageView = UIImageView()
+            imageView.contentMode = .scaleAspectFill
             imageView.image = image
             imageView.layer.cornerRadius = 12
             imageView.clipsToBounds = true
@@ -590,8 +591,11 @@ extension CalendarViewController: UICollectionViewDataSource {
             offset += 7
         }
         
+        
+        
         let day = indexPath.item - offset + 1
         let daysInMonth = calendar.range(of: .day, in: .month, for: changedDate)?.count ?? 30
+       
         
         if day > 0 && day <= daysInMonth {
             cell.configDate(with: day)
@@ -612,19 +616,36 @@ extension CalendarViewController: UICollectionViewDataSource {
             var dateComponents = calendar.dateComponents([.year, .month], from: changedDate)
             dateComponents.day = day
                         
+            guard let targetDate = calendar.date(from: dateComponents) else {
+                print("无法解析 DateComponents 为有效日期")
+                return CalendarControllerViewCell()
+            }
+
+            
+                        
             if let cellDate = calendar.date(from: dateComponents) {
                 // 比较 cell 日期和今天 (now)
                 // 使用 compare(_:to:toGranularity:) 忽略时分秒差异，只比较日期
                 let comparison = calendar.compare(cellDate, to: now, toGranularity: .day)
                 let isSelected = calendar.isDate(cellDate, inSameDayAs: selectedDate)
                 
-                if isSelected {
-                    cell.showSelectedHighLight(true)
+                // 4. 提取星期几（.weekday 组件）
+                let weekday = calendar.component(.weekday, from: targetDate)
+                print("weekday:\(weekday)")
+                
+                if weekday == 2 {
+                    rowCount = rowCount + 1
+                    print("row1:\(rowCount)")
+                }
+                
+                if isSelected && comparison != .orderedSame { // 解决了今天和选择日期的冲突问题
+                    cell.showSelectMarkView(true)
                 } else if comparison == .orderedSame {
                     // 是今天
-                    cell.showTodayHighLight()
+                    cell.showTodayHighLight(true)
+                    cell.showSelectMarkView(false)
                 } else {
-                    cell.showSelectedHighLight(false)
+                    cell.showSelectMarkView(false)
                 }
                 
                 if comparison == .orderedAscending {
@@ -640,9 +661,23 @@ extension CalendarViewController: UICollectionViewDataSource {
                 }
                 
                 // 检查是否有日记
-                let dateString = dateFormatter.string(from: cellDate)
+                //let dateString = dateFormatter.string(from: cellDate)
                 //cell.showDiaryIndicator(diaryDates.contains(dateString))
             }
+            
+            if day == daysInMonth {
+                if firstWeekDayOfMonth != 2 {
+                    rowCount += 1
+                }// 新的问题1 解决，但是 问题2: 我的日历数据无法显示了：问题所在：在刷新过几次以后 rowCount 无限累加了，导致 collectionView 高度很高。。
+                print("row:\(rowCount)")
+                CalendarCollectionView.snp.remakeConstraints { make in
+                    make.top.equalTo(weekTitleStackView.snp.bottom).offset(3)
+                    make.width.equalTo(Constant.componentWidth)
+                    make.height.equalTo(sigalItemW * rowCount)
+                    make.centerX.equalToSuperview()
+                }
+                rowCount = 0 //问题2 解决
+            }// 新的问题1：首次加载出来3月只有5行（29天），但是刷新过又是正常的
         } else {
             cell.isHidden = true
         }
