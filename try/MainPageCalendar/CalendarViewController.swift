@@ -46,7 +46,7 @@ struct Constant {
     /// 高度
     static let monthLabelHeight = 25
     /// 组件之间的间距
-    static let componentSpacing = 10
+    static let componentSpacing = 16
     /// 集合视图单元格宽度
     static let collectionViewCellWidth = (screenWidth - edge * 2)/7
     /// 组件宽度
@@ -116,7 +116,7 @@ class CalendarViewController: UIViewController {
     private lazy var monthLabel: UILabel = {
         let mlbl = UILabel()
         mlbl.textColor = .label
-        mlbl.font = .systemFont(ofSize: 40, weight: .bold)
+        mlbl.font = .systemFont(ofSize: 28, weight: .bold)
         return mlbl
     }()
     
@@ -204,7 +204,7 @@ class CalendarViewController: UIViewController {
         textView.showsVerticalScrollIndicator = false
         textView.bounces = false
         textView.layer.borderWidth = 1
-        textView.font = .systemFont(ofSize: 22)
+        textView.font = .systemFont(ofSize: 16)
         textView.layer.borderColor = UIColor.lightGray.cgColor
         textView.textContainerInset = UIEdgeInsets(top: 11, left: 11, bottom: 11, right: 10)
         return textView
@@ -214,7 +214,7 @@ class CalendarViewController: UIViewController {
     
     private let dateLabel: UILabel = {
         let lbl = UILabel()
-        lbl.font = .systemFont(ofSize: 25, weight: .bold)
+        lbl.font = .systemFont(ofSize: 22, weight: .bold)
         lbl.textColor = .label
         return lbl
     }()
@@ -372,7 +372,7 @@ class CalendarViewController: UIViewController {
             label.text = title
             label.textColor = .black
             label.textAlignment = .center
-            label.font = .systemFont(ofSize: 22, weight: .bold)
+            label.font = .systemFont(ofSize: 16, weight: .bold)
             weekTitleStackView.addArrangedSubview(label)
         }
     }
@@ -399,7 +399,7 @@ class CalendarViewController: UIViewController {
             textView.isHidden = true
         } else {
             textView.isHidden = false
-            let height = self.textView.text.getHeightByWidth(Constant.componentWidth - 32, font: .systemFont(ofSize: 22)) // 为什么是减32, 不应该是两个内边距的距离22吗
+            let height = self.textView.text.getHeightByWidth(Constant.componentWidth - 32, font: .systemFont(ofSize: 16)) // 为什么是减32, 不应该是两个内边距的距离22吗
             textView.snp.remakeConstraints { make in
                 make.height.equalTo(height + 22)
                 make.width.equalTo(Constant.componentWidth)
@@ -427,6 +427,7 @@ class CalendarViewController: UIViewController {
             self.pictureContainerView.isHidden = true
             return
         }
+        
         self.pictureContainerView.isHidden = false
         for image in images {
             guard let index = images.firstIndex(of: image) else { return}
@@ -445,6 +446,13 @@ class CalendarViewController: UIViewController {
             imageView.image = image
             imageView.layer.cornerRadius = 12
             imageView.clipsToBounds = true
+            imageView.isUserInteractionEnabled = true
+            let tap = UITapGestureRecognizer(target: self, action: #selector(zoomImage))
+            imageView.addGestureRecognizer(tap)
+            // 长按保存
+            let longPress = UILongPressGestureRecognizer(target: self, action: #selector(longPressSave))
+            imageView.addGestureRecognizer(longPress)
+            
             pictureContainerView.addSubview(imageView)
             
             imageView.snp.makeConstraints { make in
@@ -530,6 +538,42 @@ extension CalendarViewController {
     
     @objc private func handleDiaryUpdate() {
         fetchDiaryDates()
+    }
+    
+    @objc private func zoomImage(_ gesture: UITapGestureRecognizer) {
+        guard let imageView = gesture.view as? UIImageView else { return }
+        ImageZoomManager.shared.zoom(imageView: imageView)
+    }
+    
+    @objc private func longPressSave(_ gesture: UILongPressGestureRecognizer) {
+        // 只在开始时触发一次
+        guard gesture.state == .began else { return }
+        
+        let alert = UIAlertController(title: "保存图片", message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        alert.addAction(UIAlertAction(title: "确认", style: .destructive, handler: { [weak self] _ in
+          //  self?.saveToAlbum(imageView: gesture.view?.largeContentImage)
+            guard let image = gesture.view?.largeContentImage else { return }
+            
+            // 保存到相册
+            UIImageWriteToSavedPhotosAlbum(image, self, #selector(self?.imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+        }))
+        present(alert, animated: true)
+    }
+    
+    private func saveToAlbum(imageView: UIImageView) {
+        guard let image = imageView.image else { return }
+        
+        // 保存到相册
+        UIImageWriteToSavedPhotosAlbum(image, self, #selector(imageSaved(_:didFinishSavingWithError:contextInfo:)), nil)
+    }
+    
+    // 保存结果回调
+    @objc private func imageSaved(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+        let msg = error == nil ? "保存成功" : "保存失败：\(error!.localizedDescription)"
+        let alert = UIAlertController(title: "提示", message: msg, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        present(alert, animated: true)
     }
 }
 

@@ -33,14 +33,14 @@ class CalendarControllerViewCell: UICollectionViewCell {
     let dateLabel: UILabel = {
         let dbl = UILabel()
         dbl.textColor = .label
-        dbl.font = .systemFont(ofSize: 22, weight: .bold)
+        dbl.font = .systemFont(ofSize: 16, weight: .bold)
         return dbl
     }()
     
     let todayHighLightView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
-        view.layer.cornerRadius = 22
+        view.layer.cornerRadius = 15
 //        view.layer.borderWidth = 0.5
 //        view.layer.borderColor = UIColor.gray.cgColor
         view.isHidden = true
@@ -116,7 +116,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         }
         
         todayHighLightView.snp.makeConstraints { make in
-            make.height.width.equalTo(44)
+            make.height.width.equalTo(30)
             make.center.equalToSuperview()
         }
         

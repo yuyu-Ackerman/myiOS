@@ -141,7 +141,7 @@ struct ImageDragGridConstants {
     // MARK: - 性能配置
     struct Performance {
         /// 图片压缩质量 (0.0 - 1.0)
-        static let imageCompressionQuality: CGFloat = 0.8
+        static let imageCompressionQuality: CGFloat = 1
         
         /// 最大图片尺寸
         static let maxImageSize: CGFloat = 1024
