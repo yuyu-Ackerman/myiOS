@@ -13,10 +13,27 @@
 
 import UIKit
 
+/**
+ 图片放大管理器
+ 
+ 功能：
+ 1. 提供全屏查看图片的动画效果
+ 2. 支持点击放大和点击缩小还原
+ 3. 自动计算图片缩放比例
+ 
+ 架构：
+ 单例模式
+ */
 class ImageZoomManager {
+    
+    // MARK: - Singleton
+    
     static let shared = ImageZoomManager()
     
-    init() {}
+    private init() {}
+    
+    // MARK: - Properties
+    
     private var oldFrame: CGRect = .zero
     
     private lazy var zoomImageView: UIImageView = {
@@ -35,7 +52,19 @@ class ImageZoomManager {
         return bgdView
     }()
         
+    // MARK: - Public Methods
     
+    /**
+     放大展示图片
+     
+     - Parameter imageView: 被点击的源图片视图
+     
+     动画流程：
+     1. 获取源视图在 Window 中的坐标
+     2. 创建临时放大视图，初始位置设为源视图位置
+     3. 添加全屏背景
+     4. 动画过渡到全屏居中显示
+     */
     func zoom(imageView: UIImageView) {
         guard let image  = imageView.image,
         let window = UIApplication.shared.keyWindow else { return }
@@ -59,6 +88,13 @@ class ImageZoomManager {
         }
     }
     
+    // MARK: - Actions
+    
+    /**
+     隐藏放大视图
+     
+     动画还原到原始位置，完成后移除视图
+     */
     @objc private func hideView() {
         UIView.animate(withDuration: 0.4, animations: {
             self.zoomImageView.frame = self.oldFrame

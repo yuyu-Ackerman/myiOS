@@ -4,11 +4,31 @@
 //
 //  Created by 小余 on 2025/12/29.
 //
+
+/**
+ 首页日历视图控制器
+
+ 功能：
+ 1. 展示月视图日历
+ 2. 支持月份切换
+ 3. 展示日记概览（评分、内容摘要、图片）
+ 4. 处理日期点击事件，跳转或刷新选中状态
+ 5. 响应日记更新通知
+
+ 架构：
+ MVC (配合 ViewModel 处理数据)
+
+ 主要职责：
+ - 管理日历 UI 布局
+ - 处理用户交互（点击、滑动、长按）
+ - 协调 DiaryEditViewModel 和 DiaryStorageManager
+ */
 /*
 
 // TODO: 1.scrollView contentSize 可以根据约束自动撑开吗？必须要设置吗？所有视图都坍缩了，我怀疑之前 collectionView 的问题也是因为 scrollView。回头研究一下他的 contentSize
  // TODO: 2.背景都为黑色，即使没有打开黑夜模式，是因为默认背景为黑色吗
  A: 添加了这一句：self.view.backgroundColor = .systemBackground 把背景色设为系统背景，但这仅仅在当前页面有效，无法全局应用
+ // 一个很大的败笔：没有理清楚3个date的关系，导致后面用的时候想一出是一出，很混乱
 
 
 */
@@ -66,10 +86,13 @@ struct Constant {
 /// 首页日历视图
 class CalendarViewController: UIViewController {
     
+    // MARK: - Data
+    
     private let weekTitle = ["一", "二", "三", "四", "五", "六", "日"]
     /// 一个日期 cell 的宽高
     private let sigalItemW = (UIScreen.main.bounds.width - Constant.edge * 2)/7
     
+    /// 负责处理日记数据的 ViewModel
     private let viewModel = DiaryEditViewModel()
     
 //    Swift不允许在类的顶层直接执行赋值、方法调用等操作，只能放声明（属性、方法、协议、嵌套类型等）
@@ -81,11 +104,15 @@ class CalendarViewController: UIViewController {
 //    var calendar = Calendar.current
 //    calendar.timeZone = TimeZone.current
     
+    /// 当前时间（基准时间）
     var now = Date()
+    /// 当前显示的月份所在的日期（用于翻页）
     var changedDate = Date()
-    private var selectedDate: Date = Date()
+   // private var selectedDate: Date = Date()
+    /// 动态计算的日历行数
     var rowCount: CGFloat = 0 // 不能放在 dataSourse 中定义，因为每一次都会重新定义 rowCount 刷新。。导致不管多少次结果都是0
     
+    /// 日历对象
     let calendar: Calendar = {
         var cal = Calendar.current
         cal.timeZone = TimeZone.current
@@ -93,6 +120,7 @@ class CalendarViewController: UIViewController {
         return cal
     }()
     
+    /// 存储有日记的日期字符串集合
     private var diaryDates: Set<String> = []
     
     private lazy var dateFormatter: DateFormatter = {
@@ -101,7 +129,8 @@ class CalendarViewController: UIViewController {
         return formatter
     }()
     
-    // MARK: UI 控件
+    // MARK: - UI 控件
+    
     /// 整个屏幕内的 scrollView 便于滑动展示信息
     private lazy var scrollView: UIScrollView = {
         let slv = UIScrollView()
@@ -219,7 +248,8 @@ class CalendarViewController: UIViewController {
         return lbl
     }()
     
-    // MARK: initialize
+    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
@@ -259,6 +289,7 @@ class CalendarViewController: UIViewController {
            
     
     // MARK: private methods
+    /// 添加子视图
     private func setupViews() {
         view.addSubview(scrollView)
         view.addSubview(monthLabel)
@@ -274,7 +305,16 @@ class CalendarViewController: UIViewController {
         scrollView.addSubview(pictureContainerView)
     }
     
-    /// 更新日历 UI：标题和列表
+
+    
+    /**
+     更新日历 UI：标题和列表
+     
+     触发场景：
+     - 切换月份
+     - 初始化
+     - 数据更新
+     */
     private func updateCalendarUI() {
         // 1. 更新月份标题
         let year = calendar.component(.year, from: changedDate)
@@ -283,8 +323,9 @@ class CalendarViewController: UIViewController {
         
         // 2. 刷新 CollectionView
         CalendarCollectionView.reloadData()
-        // TODO: load data 之前应该清除缓存
-        DiaryStorageManager.shared.clearBuffer(date: changedDate)
+//        // TODO: load data 之前应该清除缓存
+//        DiaryStorageManager.shared.clearBuffer(date: changedDate)
+        // 不能清，不然会导致每次切换月份时，每次切换月份或刷新日历时，系统都会删除当前日期对应的日记图片！
         loadData(date: changedDate) // 为什么 now 不行
     }
     
@@ -343,8 +384,8 @@ class CalendarViewController: UIViewController {
         
         starRateView.snp.makeConstraints { make in
             make.left.equalToSuperview().inset(16)
-            make.width.equalTo(200)
-            make.height.equalTo(32)
+            make.width.equalTo(160)
+            make.height.equalTo(25)
             
             make.top.equalTo(dateLabel.snp.bottom).offset(Constant.componentSpacing)
         }
@@ -377,7 +418,16 @@ class CalendarViewController: UIViewController {
         }
     }
     
-    /// 获取日记信息
+    /**
+     加载指定日期的日记数据
+     
+     - Parameter date: 要加载的日期
+     
+     流程：
+     1. 通过 ViewModel 获取数据
+     2. 更新评分、文本、图片 UI
+     3. 如果没有数据则隐藏详情区域
+     */
     private func loadData(date: Date) {
         viewModel.loadData(for: date)
         let score = viewModel.getScore()
@@ -418,6 +468,16 @@ class CalendarViewController: UIViewController {
         self.pictureContainerView.isHidden = true
     }
     
+    /**
+     设置日记图片展示
+     
+     - Parameter images: 图片数组
+     
+     布局逻辑：
+     - 九宫格布局
+     - 动态计算高度
+     - 支持点击放大和长按保存
+     */
     private func setPictures(images: [UIImage]) {
         // 清除旧的图片视图
         pictureContainerView.subviews.forEach { $0.removeFromSuperview() }
@@ -471,7 +531,14 @@ class CalendarViewController: UIViewController {
         }
     }
     
-    /// 获取当月第一天的星期信息
+    // MARK: - Helper Methods
+    
+    /**
+     获取当月第一天是星期几
+     
+     - Parameter date: 当前月份的任意日期
+     - Returns: 星期数 (1=Sun, 2=Mon, ..., 7=Sat)
+     */
     private func getFirstWeekDayOfMonth(from date: Date) -> Int {
         
         // 这是只获取了当前时间的年份和月份信息，没有精确到天
@@ -494,6 +561,13 @@ class CalendarViewController: UIViewController {
         return today
     }
     
+    /**
+     获取所有有日记的日期
+     
+     1. 从 StorageManager 获取所有日记
+     2. 提取日期并格式化
+     3. 更新 UI
+     */
     private func fetchDiaryDates() {
         
         let year = calendar.component(.year, from: changedDate)
@@ -502,49 +576,106 @@ class CalendarViewController: UIViewController {
         
         let diaries = DiaryStorageManager.shared.getAllDiaries()
         diaryDates = Set(diaries.map { dateFormatter.string(from: $0.date) })
-        CalendarCollectionView.reloadData()
-        loadData(date: changedDate)
+        // fetchDiaryDates calls updateCalendarUI which handles reloadData and constraints
+        updateCalendarUI()
     }
     
+    // 本来是在dataSource 里面的，改在刷新的时候进行了，每个月份加载的时候进行一次
+    /**
+     计算当月需要的行数
+     
+     - Parameter date: 当前月份
+     - Returns: 行数 (4, 5, or 6)
+     
+     算法：
+     1. 获取当月天数
+     2. 获取第一天偏移量
+     3. 计算总格子数
+     4. 向上取整除以7
+     */
+    private func calculateRows(for date: Date) -> Int {
+        let daysInMonth = calendar.range(of: .day, in: .month, for: date)?.count ?? 30
+        let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: date)
+        
+        var offset = firstWeekDayOfMonth - calendar.firstWeekday
+        if offset < 0 {
+            offset += 7
+        }
+        
+        let totalCells = offset + daysInMonth
+        let rows = Int(ceil(Double(totalCells) / 7.0))
+        return rows
+    }
+    
+    /// 计算当前日期是否是本月
+    private func isThisMonth(of date: Date) -> Bool {
+        let month = calendar.component(.month, from: date)
+        let thisMonth = calendar.component(.month, from: now)
+        
+        if month == thisMonth {
+            return true
+        } else {
+            return false
+        }
+    }
 }
 
 // MARK: Respond Methods
 extension CalendarViewController {
+    /// 左箭头点击：切换到上个月
     @objc private func leftArrowTapped() {
         // 获取上个月的日期
         guard let previousMonthDate = calendar.date(byAdding: .month, value: -1, to: changedDate) else { return }
-        // 更新当前日期
-        changedDate = previousMonthDate
+        
+        if isThisMonth(of: previousMonthDate) {
+            changedDate = now
+        } else {
+            let component = calendar.dateComponents([.year, .month], from: previousMonthDate)
+            guard let firstDayOfMonth = calendar.date(from: component) else { return }
+            changedDate = firstDayOfMonth
+        }
+       
         // 刷新 UI
         updateCalendarUI()
     }
     
+    /// 右箭头点击：切换到下个月
     @objc private func rightArrowTapped() {
         // 获取下个月的日期
         guard let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: changedDate) else { return }
         // 更新当前日期
-        changedDate = nextMonthDate
+        if isThisMonth(of: nextMonthDate) {
+            changedDate = now
+        } else {
+            let component = calendar.dateComponents([.year, .month], from: nextMonthDate)
+            guard let firstDayOfMonth = calendar.date(from: component) else { return }
+            changedDate = firstDayOfMonth
+        }
         // 刷新 UI
         updateCalendarUI()
     }
     
+    /// 添加按钮点击：打开日记编辑页
     @objc private func addButtonTapped() {
         // Open Diary Edit
         let editDiaryVC = DiaryEditViewController()
-        editDiaryVC.currentDate = selectedDate
+        editDiaryVC.currentDate = changedDate
         editDiaryVC.modalPresentationStyle = .fullScreen
         self.present(editDiaryVC, animated: true)
     }
     
+    /// 处理日记数据更新通知
     @objc private func handleDiaryUpdate() {
         fetchDiaryDates()
     }
     
+    /// 点击图片放大
     @objc private func zoomImage(_ gesture: UITapGestureRecognizer) {
         guard let imageView = gesture.view as? UIImageView else { return }
         ImageZoomManager.shared.zoom(imageView: imageView)
     }
     
+    /// 长按图片保存
     @objc private func longPressSave(_ gesture: UILongPressGestureRecognizer) {
         // 只在开始时触发一次
         guard gesture.state == .began else { return }
@@ -577,10 +708,12 @@ extension CalendarViewController {
     }
 }
 
-// MARK: UIScrollViewDelegate
+// MARK: - UIScrollViewDelegate
+
 extension CalendarViewController: UIScrollViewDelegate { }
 
-// MARK: UICollectionViewDelegate
+// MARK: - UICollectionViewDelegate
+
 extension CalendarViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let firstWeekDayOfMonth = getFirstWeekDayOfMonth(from: changedDate)
@@ -598,7 +731,7 @@ extension CalendarViewController: UICollectionViewDelegate {
             
             if let cellDate = calendar.date(from: dateComponents) {
                 // 更新选中日期并刷新 UI
-                selectedDate = cellDate
+                changedDate = cellDate
                 collectionView.reloadData()
                 
                 
@@ -612,7 +745,8 @@ extension CalendarViewController: UICollectionViewDelegate {
     }
 }
 
-// MARK: UICollectionViewDataSource
+// MARK: - UICollectionViewDataSource
+
 extension CalendarViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return Constant.datenum
@@ -671,7 +805,7 @@ extension CalendarViewController: UICollectionViewDataSource {
                 // 比较 cell 日期和今天 (now)
                 // 使用 compare(_:to:toGranularity:) 忽略时分秒差异，只比较日期
                 let comparison = calendar.compare(cellDate, to: now, toGranularity: .day)
-                let isSelected = calendar.isDate(cellDate, inSameDayAs: selectedDate)
+                let isSelected = calendar.isDate(cellDate, inSameDayAs: changedDate)
                 
                 // 4. 提取星期几（.weekday 组件）
                 let weekday = calendar.component(.weekday, from: targetDate)

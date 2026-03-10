@@ -8,12 +8,29 @@
 import UIKit
 import SnapKit
 
+/**
+ 日记编辑视图控制器
+ 
+ 功能：
+ 1. 提供日记编辑界面（评分、文本、图片）
+ 2. 支持图片拖拽排序
+ 3. 自动保存或手动保存日记
+ 4. 处理键盘交互
+ 
+ 架构：
+ MVVM (持有 DiaryEditViewModel)
+ */
 class DiaryEditViewController: UIViewController {
     
+    // MARK: - Data
+    
+    /// 负责处理日记数据的 ViewModel
     private let viewModel = DiaryEditViewModel()
+    /// 标记当前是否显示占位符
     private var isPlaceholderActive: Bool = true
 
     // MARK: UI 控件
+    /// 返回按钮
     private lazy var backButtonImageView: UIImageView = {
         let biv = UIImageView()
         biv.contentMode = .scaleAspectFill
@@ -25,6 +42,7 @@ class DiaryEditViewController: UIViewController {
         return biv
     }()
     
+    /// 标题标签
     private let titleLabel: UILabel = {
         let title = UILabel()
         title.text = "今日"
@@ -54,6 +72,7 @@ class DiaryEditViewController: UIViewController {
     }()
     
     //TODO: 搞明白 frame 约束的影响
+    /// 星级评分视图
     private lazy var starRateView: StarRateView = {
         let srv = StarRateView(config: StarRateConfigration())
         // 接收评分回调并打印
@@ -72,6 +91,7 @@ class DiaryEditViewController: UIViewController {
         return label
     }()
     
+    /// 文本编辑框
     private lazy var textEditView: UITextView = {
         let attr = NSMutableAttributedString(string: "说点什么吧...")
         attr.addAttribute(.font, value: UIFont.systemFont(ofSize: 16), range: NSRange(location: 0, length: attr.length))
@@ -96,6 +116,7 @@ class DiaryEditViewController: UIViewController {
         return label
     }()
     
+    /// 图片拖拽网格视图
     private let pictureContainerView = ImageDragGridView()
     
     private lazy var bottomButton: UIButton = {
@@ -109,7 +130,7 @@ class DiaryEditViewController: UIViewController {
         return btn
     }()
     
-    // 当前编辑的日期，默认为今天。应该由外部传入
+    /// 当前编辑的日期，默认为今天。应该由外部传入
     var currentDate: Date = Date() {
         didSet {
             // 如果视图已经加载，更新标题
@@ -119,6 +140,8 @@ class DiaryEditViewController: UIViewController {
             }
         }
     }
+    
+    // MARK: - Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -131,7 +154,7 @@ class DiaryEditViewController: UIViewController {
         loadDiaryData()
     }
     
-    //MARK: Private Methods
+    // MARK: - Private Methods
     
     private func setupTapGesture() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
@@ -160,7 +183,15 @@ class DiaryEditViewController: UIViewController {
         }
     }
     
-    /// 加载对应日期的日记信息
+    /**
+     加载对应日期的日记信息
+     
+     流程：
+     1. ViewModel 加载数据
+     2. 更新评分 UI
+     3. 更新文本内容（处理占位符）
+     4. 更新图片列表
+     */
     private func loadDiaryData() {
         // 1. 让 ViewModel 加载数据
         viewModel.loadData(for: currentDate)
@@ -278,7 +309,8 @@ class DiaryEditViewController: UIViewController {
     }
 }
 
-// MARK: UITextViewDelegate
+// MARK: - UITextViewDelegate
+
 extension DiaryEditViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if isPlaceholderActive {
@@ -303,7 +335,8 @@ extension DiaryEditViewController: UITextViewDelegate {
     }
 }
 
-// MARK: Respond methods
+// MARK: - Respond methods
+
 extension DiaryEditViewController {
     /// 返回按钮点击响应
     @objc private func backButtonTapped() {

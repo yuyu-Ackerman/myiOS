@@ -49,16 +49,28 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				regulation.md,
 			);
 			target = B8486ECE2EDF4027005C0DB5 /* try */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		B8E6B6342F606C3800111B33 /* Exceptions for "try" folder in "Compile Sources" phase from "try" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = B8486ECB2EDF4027005C0DB5 /* Sources */;
+			membershipExceptions = (
+				regulation.md,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B8486ED12EDF4027005C0DB5 /* try */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				B8486EF72EDF4028005C0DB5 /* Exceptions for "try" folder in "try" target */,
+				B8E6B6342F606C3800111B33 /* Exceptions for "try" folder in "Compile Sources" phase from "try" target */,
 			);
 			path = try;
 			sourceTree = "<group>";

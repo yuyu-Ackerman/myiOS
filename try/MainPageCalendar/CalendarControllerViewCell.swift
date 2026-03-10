@@ -7,12 +7,23 @@
 import UIKit
 import SnapKit
 
-/// 日历视图的 cell
+/**
+ 日历视图单元格
+ 
+ 功能：
+ 1. 展示日期数字
+ 2. 展示日记背景图
+ 3. 展示特殊状态（今天高光、选中标记、遮罩）
+ */
+
 class CalendarControllerViewCell: UICollectionViewCell {
     
+    /// 复用标识符
     static let reuseIdentifier = "calendarCell"
     
-    // MARK: UI 控件
+    // MARK: - UI 控件
+    
+    /// 背景图片视图
     let backgroundImageView: UIImageView = {
         let bgImageView = UIImageView()
         bgImageView.layer.cornerRadius = 10
@@ -21,7 +32,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return bgImageView
     }()
     
-    // 这里的 maskImageView 实际上是用作半透明遮罩层 (Overlay)，不是 layer.mask
+    /// 半透明遮罩层 (用于非当前月份或未来日期的视觉区分)
     let maskImageView: UIView = {
     let mv = UIView()
         mv.backgroundColor = .white
@@ -30,6 +41,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return mv
     }()
     
+    /// 日期数字标签
     let dateLabel: UILabel = {
         let dbl = UILabel()
         dbl.textColor = .label
@@ -37,6 +49,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return dbl
     }()
     
+    /// 今天日期的高光背景
     let todayHighLightView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
@@ -56,6 +69,7 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return view
     }()
     
+    /// 选中状态标记
     private lazy var selectMarkView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
@@ -63,7 +77,8 @@ class CalendarControllerViewCell: UICollectionViewCell {
         return view
     }()
     
-    // MARK: 初始化方法
+    // MARK: - Initialization
+    
     override init(frame: CGRect) {
         super.init(frame: frame) // 初始化参数?
         setupUI()
@@ -135,19 +150,20 @@ class CalendarControllerViewCell: UICollectionViewCell {
     }
 }
 
-// MARK: public method
+// MARK: public methods
 extension CalendarControllerViewCell {
     /// 设置 cell 对应的日期
     func configDate(with dateNum: Int) {
         dateLabel.text = String(dateNum)
     }
     
-    /// 显示灰色遮罩
+    /// 显示灰色遮罩 (用于过去日期)
     func showMaskImageView() {
         maskImageView.isHidden = false
     }
     
     /// 当前日期显示高光
+    /// - Parameter show: 是否显示
     func showTodayHighLight(_ show: Bool) {
         dateLabel.textColor = .white
         todayHighLightView.isHidden = !show
@@ -158,11 +174,12 @@ extension CalendarControllerViewCell {
 //        todayHighLightView.isHidden = !show
 //    }
     
-    /// 显示日期下面的蓝色圆点
+    /// 显示日期下面的蓝色圆点 (是否有日记)
     func showDiaryIndicator(_ show: Bool) {
         diaryIndicatorView.isHidden = !show
     }
     
+    /// 显示选中状态的下划线
     func showSelectMarkView(_ show: Bool) {
         selectMarkView.isHidden = !show
     }

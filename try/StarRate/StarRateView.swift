@@ -13,17 +13,30 @@
 import UIKit
 import SnapKit
 
+/// 星级评分组件
+///
+/// 支持三种评分模式：
+/// 1. 完整星 (complete)
+/// 2. 半星 (half)
+/// 3. 无限精度 (unlimited)
 class StarRateView: UIView {
 
+    // MARK: - Properties
+    
     private var config: StarRateConfigration
     private var lastCount: Float = -1
     private var currentCount: Float = 0
     
+    /// 评分变化回调
     var starScoreClousure: ((Float) ->())?
    
+    // MARK: - UI
+    
     private lazy var unstarView = createStarView("unstar")
     
     private lazy var starView = createStarView("star")
+    
+    // MARK: - Initialization
     
     init(config:StarRateConfigration) {
         self.config = config
@@ -38,10 +51,19 @@ class StarRateView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Public Methods
+    
+    /**
+     设置当前评分
+     
+     - Parameter score: 评分值
+     */
     public func setScore(_ score: Float) {
         self.currentCount = score
         updateStarView()
     }
+    
+    // MARK: - UI Setup
     
     private func setupUI() {
         addSubview(unstarView)
