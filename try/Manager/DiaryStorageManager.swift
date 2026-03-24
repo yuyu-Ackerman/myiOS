@@ -34,7 +34,18 @@ class DiaryStorageManager {
     static let shared = DiaryStorageManager() // TODO: 这是什么写法
     
     /// 私有初始化方法，防止外部创建实例
-    private init() {} // TODO: 为什么要留一个空的 init
+    private init() {
+        // 初始化时加载数据到内存缓存
+        self.cachedDiaries = loadDiariesFromDisk()
+    } // TODO: 为什么要留一个空的 init
+    
+    // MARK: - Properties
+    
+    /// 内存缓存：存储所有日记数据
+    private var cachedDiaries: [DiaryModel] = []
+    
+    /// 串行队列，用于确保线程安全的数据读写
+    private let queue = DispatchQueue(label: "com.todayview.diarystorage", qos: .userInitiated)
     
     // MARK: - Paths
     
@@ -51,6 +62,30 @@ class DiaryStorageManager {
     
     // MARK: - Helper Methods
     
+    /// 从磁盘加载数据到内存（仅在初始化时调用）
+    private func loadDiariesFromDisk() -> [DiaryModel] {
+        guard let data = try? Data(contentsOf: dataFilePath) else { return [] }
+        guard let diaries = try? JSONDecoder().decode([DiaryModel].self, from: data) else { return [] }
+        return diaries
+    }
+    
+    /// 将内存中的数据异步写入磁盘
+    private func saveDiariesToDisk() {
+        // 捕获当前的缓存副本
+        let diariesToSave = self.cachedDiaries
+        
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            guard let self = self else { return }
+            do {
+                let data = try JSONEncoder().encode(diariesToSave)
+                try data.write(to: self.dataFilePath)
+                print("数据已成功写入磁盘")
+            } catch {
+                print("数据写入失败: \(error)")
+            }
+        }
+    }
+    
     /**
      清理指定日期的旧图片文件
      
@@ -58,9 +93,12 @@ class DiaryStorageManager {
      
      用途：
      在保存新日记前，删除旧日记关联的图片文件，防止产生孤儿文件
+     
+     注意：这是一个内部私有方法，不使用队列锁，由调用者保证线程安全
      */
-    func clearBuffer(date: Date) {
-        if let oldDiary = getDiary(for: date) {
+    private func clearBufferInternal(date: Date) {
+        // 直接访问 cachedDiaries，不加锁，因为外部调用者已经加锁了
+        if let oldDiary = self.cachedDiaries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) }) {
             for path in oldDiary.imagePaths {
                 let fullPath = documentsDirectory.appendingPathComponent(path)
                 try? FileManager.default.removeItem(at: fullPath)
@@ -82,48 +120,51 @@ class DiaryStorageManager {
      1. 清理旧数据
      2. 保存新图片到磁盘
      3. 更新内存中的日记列表
-     4. 写入 JSON 文件
+     4. 异步写入 JSON 文件
      5. 发送更新通知
      */
     func saveDiary(date: Date, score: Float, content: String, images: [UIImage]) {
-        // 0. 清理该日期旧数据的图片文件，防止产生未引用的孤儿文件
-        clearBuffer(date: date)
-        
-        // 1. 保存新图片到磁盘
-        var savedImagePaths: [String] = []
-        for image in images {
-            let imageName = UUID().uuidString + ".jpg"
-            let imagePath = documentsDirectory.appendingPathComponent(imageName)
+        queue.async { [weak self] in
+            guard let self = self else { return }
             
-            if let data = image.jpegData(compressionQuality: 1 {
-                try? data.write(to: imagePath)
-                // TODO: 为什么 try 后面要加问号
-                savedImagePaths.append(imageName)
+            // 0. 清理该日期旧数据的图片文件，防止产生未引用的孤儿文件
+            // 使用内部无锁版本，避免死锁
+            self.clearBufferInternal(date: date)
+            
+            // 1. 保存新图片到磁盘 (图片IO仍可能耗时，但这是必要的)
+            var savedImagePaths: [String] = []
+            for image in images {
+                let imageName = UUID().uuidString + ".jpg"
+                let imagePath = self.documentsDirectory.appendingPathComponent(imageName)
+                
+                if let data = image.jpegData(compressionQuality: 0.8) {
+                    do {
+                        try data.write(to: imagePath)
+                        savedImagePaths.append(imageName)
+                    } catch {
+                        print("图片保存失败: \(error)")
+                    }
+                }
+            }
+            
+            // 2. 创建新的 Entry
+            let newEntry = DiaryModel(date: date, score: score, content: content, imagePaths: savedImagePaths)
+            
+            // 3. 更新内存缓存
+            // 移除同一天的旧日记 (假设每天只能有一篇日记)
+            self.cachedDiaries.removeAll { Calendar.current.isDate($0.date, inSameDayAs: date) }
+            
+            // 添加新日记
+            self.cachedDiaries.append(newEntry)
+            
+            // 4. 异步写入磁盘
+            self.saveDiariesToDisk()
+            
+            // 5. 在主线程发送通知，告知数据更新
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .diaryUpdated, object: nil)
             }
         }
-        
-        // 2. 创建新的 Entry
-        let newEntry = DiaryModel(date: date, score: score, content: content, imagePaths: savedImagePaths)
-        
-        // 3. 读取现有日记并更新
-        var diaries = getAllDiaries()
-        
-        // 移除同一天的旧日记 (假设每天只能有一篇日记)
-        diaries.removeAll { Calendar.current.isDate($0.date, inSameDayAs: date) }
-        
-        // 添加新日记
-        diaries.append(newEntry)
-        
-        // 4. 写入文件
-        if let data = try? JSONEncoder().encode(diaries) {
-            try? data.write(to: dataFilePath)
-            print("日记保存成功: \(newEntry)")
-        } else {
-            print("日记保存失败")
-        }
-        
-        // 发送通知，告知数据更新
-        NotificationCenter.default.post(name: .diaryUpdated, object: nil)
     }
     
     /**
@@ -132,12 +173,13 @@ class DiaryStorageManager {
      - Returns: 日记模型数组
      
      注意：
-     每次调用都会从磁盘读取 JSON 文件
+     直接返回内存缓存，性能高
      */
     func getAllDiaries() -> [DiaryModel] {
-        guard let data = try? Data(contentsOf: dataFilePath) else { return [] }
-        guard let diaries = try? JSONDecoder().decode([DiaryModel].self, from: data) else { return [] }
-        return diaries
+        // 使用同步队列访问，确保线程安全
+        return queue.sync {
+            return self.cachedDiaries
+        }
     }
     
     /**
@@ -147,8 +189,10 @@ class DiaryStorageManager {
      - Returns: 对应的日记模型（如果存在）
      */
     func getDiary(for date: Date) -> DiaryModel? {
-        let diaries = getAllDiaries()
-        return diaries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        // 使用同步队列访问
+        return queue.sync {
+            return self.cachedDiaries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        }
     }
     
     /**
@@ -171,29 +215,33 @@ class DiaryStorageManager {
      操作：
      1. 查找并删除内存中的记录
      2. 删除关联的图片文件
-     3. 更新 JSON 文件
+     3. 异步写入 JSON 文件
      4. 发送通知
      */
     func deleteDiary(for date: Date) {
-        var diaries = getAllDiaries()
-        // 找到要删除的日记
-        if let index = diaries.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: date) }) {
-            let diaryToDelete = diaries[index]
+        queue.async { [weak self] in
+            guard let self = self else { return }
             
-            // 删除关联的图片文件
-            for imageName in diaryToDelete.imagePaths {
-                let imagePath = documentsDirectory.appendingPathComponent(imageName)
-                try? FileManager.default.removeItem(at: imagePath)
+            // 找到要删除的日记
+            if let index = self.cachedDiaries.firstIndex(where: { Calendar.current.isDate($0.date, inSameDayAs: date) }) {
+                let diaryToDelete = self.cachedDiaries[index]
+                
+                // 删除关联的图片文件
+                for imageName in diaryToDelete.imagePaths {
+                    let imagePath = self.documentsDirectory.appendingPathComponent(imageName)
+                    try? FileManager.default.removeItem(at: imagePath)
+                }
+                
+                // 更新内存
+                self.cachedDiaries.remove(at: index)
+                
+                // 异步写入磁盘
+                self.saveDiariesToDisk()
+                
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .diaryUpdated, object: nil)
+                }
             }
-            
-            diaries.remove(at: index)
-            
-            // 保存更改
-            if let data = try? JSONEncoder().encode(diaries) {
-                try? data.write(to: dataFilePath)
-            }
-            
-            NotificationCenter.default.post(name: .diaryUpdated, object: nil)
         }
     }
 }

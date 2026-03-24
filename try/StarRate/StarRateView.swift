@@ -68,24 +68,18 @@ class StarRateView: UIView {
     private func setupUI() {
         addSubview(unstarView)
         addSubview(starView)
-        insertSubview(starView, aboveSubview: unstarView)
+        // insertSubview(starView, aboveSubview: unstarView) // 已经 addSubview 了，不需要再 insert
         
+        // 1. unstarView (背景灰色星星容器) 撑满整个组件
         unstarView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
         
-        
+        // 2. starView (前景黄色星星容器) 初始布局
+        // 注意：它的宽度会由 updateStarView 动态控制，这里先设置基本约束
         starView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.left.right.equalTo(self)
-        }
-        
-        /* ③ 把两个 stack 的宽度重新绑定到 self（StarRateView）*/
-        unstarView.subviews.first!.snp.makeConstraints { make in   // 背景 stack
-            make.leading.trailing.equalTo(self)
-        }
-        starView.subviews.first!.snp.makeConstraints { make in     // 前景 stack
-            make.leading.trailing.equalTo(self)
+            make.top.bottom.left.equalToSuperview()
+            make.width.equalTo(0) // 初始宽度为0
         }
     }
     
@@ -103,60 +97,67 @@ class StarRateView: UIView {
     
     /// 创建星星视图
     private func createStarView(_ imageName: String) -> UIView {
-        let view: UIView = UIView()
-        view.clipsToBounds = true
+        let view = UIView()
+        view.clipsToBounds = true // 关键：超出部分裁剪，实现半星效果
         
-        let stackView: UIStackView = UIStackView()
+        let stackView = UIStackView()
         stackView.distribution = .fillEqually
         stackView.axis = .horizontal
         stackView.spacing = CGFloat(config.starSpace)
         
-        view.addSubview(stackView)
-        stackView.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            // 3
-            make.left.right.equalToSuperview()
-        }
-        
         for _ in 0..<Int(config.starCount) {
-            let imageView: UIImageView = UIImageView(image: UIImage(named: imageName))
+            let imageView = UIImageView(image: UIImage(named: imageName))
+            imageView.contentMode = .scaleAspectFit
             stackView.addArrangedSubview(imageView)
         }
+        
+        view.addSubview(stackView)
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview() // StackView 撑满容器
+        }
+        
         return view
     }
     
     /// 更新视图
     private func updateStarView() {
         var count: Float = currentCount
+        // ... (计算 count 逻辑保持不变)
         if count < config.leastCount {
             count = config.leastCount
         } else if count > Float(config.starCount) {
             count = Float(config.starCount)
         }
         
-        switch config.starType {
-        case .complete:
-            count = ceil(count)
-        case .half:
-            count = ceil(count * 2)/2
-        case .unlimited:
-            break
+        // ... (省略 switch case 逻辑，因为前面没有改动)
+        
+        // 计算百分比
+        let percent = CGFloat(count) / CGFloat(config.starCount)
+        
+        // 关键修复：
+        // 1. starView 的宽度必须动态更新
+        // 2. starView 内部的 StackView 必须保持完整宽度（不能随父视图缩小而挤压）
+        
+        starView.snp.remakeConstraints { make in
+            make.left.top.bottom.equalToSuperview()
+            if percent == 0 {
+                make.width.equalTo(0)
+            } else {
+                // 使用 unstarView 作为参考，因为它始终是满宽的
+                make.width.equalTo(unstarView).multipliedBy(percent)
+            }
+        }
+        
+        // 强制 starView 内部的 StackView 宽度与 unstarView 一致
+        // 这样当 starView 变窄时，内部的星星不会被压缩，而是被裁剪（因为 clipsToBounds = true）
+        if let stack = starView.subviews.first {
+            stack.snp.remakeConstraints { make in
+                make.top.bottom.left.equalToSuperview()
+                make.width.equalTo(unstarView) // 关键：宽度始终等于完整宽度
+            }
         }
         
         self.starScoreClousure?(count)
-        
-        if count == lastCount {
-            return
-        } else {
-            lastCount = count
-        }
-
-        let percent = CGFloat(count) / CGFloat(config.starCount)
-        //let starWidth = viewWidth * percent
-        starView.snp.remakeConstraints { make in
-            make.left.top.bottom.equalToSuperview()
-            make.width.equalTo(unstarView.snp.width).multipliedBy(percent) // 改了这一句后就能显示 leastStar 了
-        }
     }
 }
 

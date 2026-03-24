@@ -93,7 +93,7 @@ class CalendarViewController: UIViewController {
     private let sigalItemW = (UIScreen.main.bounds.width - Constant.edge * 2)/7
     
     /// 负责处理日记数据的 ViewModel
-    private let viewModel = DiaryEditViewModel()
+    private let viewModel = CalendarViewViewModel()
     
 //    Swift不允许在类的顶层直接执行赋值、方法调用等操作，只能放声明（属性、方法、协议、嵌套类型等）
 //    let now = Date()
